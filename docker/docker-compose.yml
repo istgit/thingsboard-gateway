@@ -21,9 +21,9 @@ services:
 
     # Environment variables
     environment:
-      - TB_GW_HOST=host.docker.internal
-      - TB_GW_PORT=1883
-      - TB_GW_ACCESS_TOKEN=YOUR_ACCESS_TOKEN
+      - TB_GW_HOST=35.208.180.242
+      - TB_GW_PORT=8883  # for TLS support
+      - TB_GW_ACCESS_TOKEN=Kalene_Gateway
       - TB_GW_LOGS_PATH=/thingsboard_gateway/logs
 
     # Volumes bind
