@@ -61,5 +61,16 @@
     "minTimeBetweenPingsMs": 10000,
     "minPingIntervalWithoutDataMs": 5000
   },
-  "connectors": []
+  "connectors": [
+    {
+      "type": "snmp_listener",
+      "name": "snmp_traps",
+      "configuration": "snmp_listener.json"
+    },
+    {
+      "type": "snmp",
+      "name": "snmp",
+      "configuration": "snmp.json"
+    }
+  ]
 }
