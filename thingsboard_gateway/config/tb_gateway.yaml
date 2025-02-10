@@ -1,0 +1,14 @@
+thingsboard:
+  host: <THINGSBOARD_SERVER_HOST>
+  port: 1883
+  remoteConfiguration: true
+
+storage:
+  type: memory
+  read_records_count: 100
+  max_records_count: 10000
+
+connectors:
+  - name: TrueTeq Connector
+    type: custom
+    configuration: trueteq.json

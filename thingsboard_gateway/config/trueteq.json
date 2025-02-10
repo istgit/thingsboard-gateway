@@ -1,0 +1,6 @@
+{
+    "trueteqApiKey": "<YOUR_TRUETEQ_API_KEY>",
+    "trueteqBaseUrl": "https://api.trueteq.com",
+    "deviceName": "TrueTeq Device",
+    "pollingInterval": 60
+  }
