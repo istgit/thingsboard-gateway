@@ -17,7 +17,6 @@ GENERAL_TIMEOUT = 6
 
 
 LOG = logging.getLogger("TEST")
-LOG.trace = LOG.debug
 
 
 @unittest.skip('Flaky test')
@@ -86,7 +85,7 @@ class ModbusAttributesUpdatesTest(BaseTest):
         client.connect()
         try:
             # trigger register 28 to restart the modbus server
-            client.write_register(28, 10, 2)
+            client.write_register(28, 10, 1)
         except ConnectionException:
             # will call pymodbus.exceptions.ConnectionException because of restarting the server
             pass

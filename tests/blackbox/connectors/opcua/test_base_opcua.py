@@ -12,7 +12,6 @@ CONNECTION_TIMEOUT = 300
 DEVICE_CREATION_TIMEOUT = 120
 
 LOG = logging.getLogger("TEST")
-LOG.trace = LOG.debug
 
 
 class BaseOpcuaTest(BaseTest):

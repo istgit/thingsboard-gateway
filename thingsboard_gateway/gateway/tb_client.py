@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,29 +13,23 @@
 #     limitations under the License.
 
 import random
-import ssl
 import string
 import threading
 import inspect
-from logging import getLogger
 from os.path import exists
-from ssl import CERT_REQUIRED
-from copy import deepcopy
+from ssl import CERT_REQUIRED, PROTOCOL_TLSv1_2
 from time import sleep, time
-from typing import Union
 
 from simplejson import dumps, load
 
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 
 try:
-    from tb_gateway_mqtt import TBGatewayMqttClient, TBDeviceMqttClient, \
-        GATEWAY_ATTRIBUTES_RESPONSE_TOPIC, GATEWAY_ATTRIBUTES_TOPIC
+    from tb_gateway_mqtt import TBGatewayMqttClient, TBDeviceMqttClient
 except ImportError:
     print("tb-mqtt-client library not found - installing...")
     TBUtility.install_package('tb-mqtt-client')
-    from tb_gateway_mqtt import TBGatewayMqttClient, TBDeviceMqttClient, \
-        GATEWAY_ATTRIBUTES_RESPONSE_TOPIC, GATEWAY_ATTRIBUTES_TOPIC
+    from tb_gateway_mqtt import TBGatewayMqttClient, TBDeviceMqttClient
 
 import tb_device_mqtt
 tb_device_mqtt.DEFAULT_TIMEOUT = 3
@@ -53,7 +47,6 @@ class TBClient(threading.Thread):
         self.__port = config.get("port", 1883)
         self.__default_quality_of_service = config.get("qos", 1)
         self.__min_reconnect_delay = 1
-        self.client: Union[TBGatewayMqttClient, None] = None
         self.__ca_cert = None
         self.__private_key = None
         self.__cert = None
@@ -62,10 +55,7 @@ class TBClient(threading.Thread):
         self.__password = None
         self.__is_connected = False
         self.__stopped = False
-        self.__stop_event = threading.Event()
         self.__paused = False
-        # TODO: remove this flag
-        self.__initial_connection_done = False
         self._last_cert_check_time = 0
         self.__service_subscription_callbacks = []
 
@@ -128,45 +118,30 @@ class TBClient(threading.Thread):
 
     # def _on_log(self, *args):
     #     if "exception" in args[-1]:
-    #         self.__logger.exception(args)
+    #         log.exception(args)
     #     else:
-    #         self.__logger.debug(args)
+    #         log.debug(args)
 
     def _create_mqtt_client(self, credentials):
-        env_vars = TBUtility.get_service_environmental_variables()
-        self.__tls = bool((credentials.get('tls', False) or
-                          credentials.get('caCert', False)))
-        if env_vars.get('caCert') is not None:
-            self.__tls = True
-        if env_vars.get('type') is not None:
-            credentials_type = env_vars.get('type')
-        else:
-            credentials_type = credentials.get('type')
+        self.__tls = bool(credentials.get('tls', False) or credentials.get('caCert', False))
+        credentials_type = credentials.get('type')
         if credentials_type is None and credentials.get('accessToken') is not None:
             credentials_type = 'accessToken'
         if credentials_type == 'accessToken':
-            if env_vars.get('accessToken') is not None:
-                self.__username = str(env_vars["accessToken"])
-            else:
-                self.__username = str(credentials["accessToken"])
+            self.__username = str(credentials["accessToken"])
         if credentials_type == 'usernamePassword':
             if credentials.get("username") is not None:
-                if env_vars.get('username') is not None:
-                    self.__username = str(env_vars["username"])
-                else:
-                    self.__username = str(credentials["username"])
+                self.__username = str(credentials["username"])
             if credentials.get("password") is not None:
-                if env_vars.get('password') is not None:
-                    self.__password = str(env_vars["password"])
-                else:
-                    self.__password = str(credentials["password"])
+                self.__password = str(credentials["password"])
             if credentials.get("clientId") is not None:
-                if env_vars.get('clientId') is not None:
-                    self.__client_id = str(env_vars["clientId"])
-                else:
-                    self.__client_id = str(credentials["clientId"])
+                self.__client_id = str(credentials["clientId"])
 
-        rate_limits_config = self.__get_rate_limit_config()
+        rate_limits_config = {}
+        if self.__config.get('rateLimits'):
+            rate_limits_config['rate_limit'] = self.__config['rateLimits']
+        if self.__config.get('dpRateLimits'):
+            rate_limits_config['dp_rate_limit'] = self.__config['dpRateLimits']
 
         if rate_limits_config:
             self.client = TBGatewayMqttClient(self.__host, self.__port, self.__username, self.__password, self,
@@ -177,75 +152,31 @@ class TBClient(threading.Thread):
                                               quality_of_service=self.__default_quality_of_service,
                                               client_id=self.__client_id)
 
-        self.__ca_cert = self.__get_path_to_cert(credentials.get("caCert")) \
-            if credentials.get("caCert") is not None else None
-        if env_vars.get('caCert') is not None:
-            self.__ca_cert = self.__get_path_to_cert(env_vars.get("caCert"))
-        self.__private_key = self.__get_path_to_cert(credentials.get("privateKey")) \
-            if credentials.get("privateKey") is not None else None
-        if env_vars.get('privateKey') is not None:
-            self.__private_key = self.__get_path_to_cert(env_vars.get("privateKey"))
-        self.__cert = self.__get_path_to_cert(credentials.get("cert")) \
-            if credentials.get("cert") is not None else None
-        if env_vars.get('cert') is not None:
-            self.__cert = self.__get_path_to_cert(env_vars.get("cert"))
-        self.__check_cert_period = credentials.get('checkCertPeriod', 86400)
-        self.__certificate_days_left = credentials.get('certificateDaysLeft', 3)
-
         if self.__tls:
+            self.__ca_cert = self.__config_folder_path + credentials.get("caCert") if credentials.get(
+                "caCert") is not None else None
+            self.__private_key = self.__config_folder_path + credentials.get("privateKey") if credentials.get(
+                "privateKey") is not None else None
+            self.__cert = self.__config_folder_path + credentials.get("cert") if credentials.get(
+                "cert") is not None else None
+            self.__check_cert_period = credentials.get('checkCertPeriod', 86400)
+            self.__certificate_days_left = credentials.get('certificateDaysLeft', 3)
+
             # check certificates for end date
             self._check_cert_thread = threading.Thread(name='Check Certificates Thread',
-                                                       target=self._check_certificates,
-                                                       daemon=True)
+                                                       target=self._check_certificates, daemon=True)
             self._check_cert_thread.start()
 
-        cert_required = CERT_REQUIRED if (self.__ca_cert and
-                                          self.__cert) else ssl.CERT_OPTIONAL if self.__cert else ssl.CERT_NONE
-
-        self.client._client.tls_set(ca_certs=self.__ca_cert,
-                                    certfile=self.__cert,
-                                    keyfile=self.__private_key,
-                                    tls_version=ssl.PROTOCOL_TLS,
-                                    cert_reqs=cert_required,
-                                    ciphers=None)  # noqa pylint: disable=protected-access
-        if credentials.get("insecure", False):
-            self.client._client.tls_insecure_set(True)  # noqa pylint: disable=protected-access
-        if self.__logger.isEnabledFor(10):
-            self.client._client.enable_logger(self.__logger)  # noqa pylint: disable=protected-access
-
-    def __get_rate_limit_config(self):
-        rate_limits_config = {}
-        if self.__config.get('messagesRateLimits'):
-            rate_limits_config['messages_rate_limit'] = self.__config['messagesRateLimits']
-        if self.__config.get('telemetryRateLimits'):
-            rate_limits_config['telemetry_rate_limit'] = self.__config['rateLimits']
-        if self.__config.get('telemetryDpRateLimits'):
-            rate_limits_config['telemetry_dp_rate_limit'] = self.__config['dpRateLimits']
-
-        if self.__config.get('deviceMessagesRateLimits'):
-            rate_limits_config['device_messages_rate_limit'] = self.__config['deviceMessagesRateLimits']
-        if self.__config.get('deviceTelemetryRateLimits'):
-            rate_limits_config['device_telemetry_rate_limit'] = self.__config['deviceRateLimits']
-        if self.__config.get('deviceTelemetryDpRateLimits'):
-            rate_limits_config['device_telemetry_dp_rate_limit'] = self.__config['deviceDpRateLimits']
-
-        if 'rate_limit' in inspect.signature(TBGatewayMqttClient.__init__).parameters:
-            rate_limits_config = {}
-            if self.__config.get('rateLimits'):
-                rate_limits_config['rate_limit'] = 'DEFAULT_RATE_LIMIT' if self.__config.get(
-                    'rateLimits') == 'DEFAULT_TELEMETRY_RATE_LIMIT' else self.__config['rateLimits']
-            if ('dp_rate_limit' in inspect.signature(TBGatewayMqttClient.__init__).parameters and
-                    self.__config.get('dpRateLimits')):
-                rate_limits_config['dp_rate_limit'] = 'DEFAULT_RATE_LIMIT' if self.__config[
-                    'dpRateLimits'] == 'DEFAULT_TELEMETRY_DP_RATE_LIMIT' else self.__config['dpRateLimits']
-
-        return rate_limits_config
-
-    def __get_path_to_cert(self, filename):
-        if exists(self.__config_folder_path + filename):
-            return self.__config_folder_path + filename
-        else:
-            return filename
+            self.client._client.tls_set(ca_certs=self.__ca_cert,
+                                        certfile=self.__cert,
+                                        keyfile=self.__private_key,
+                                        tls_version=PROTOCOL_TLSv1_2,
+                                        cert_reqs=CERT_REQUIRED,
+                                        ciphers=None)  # noqa pylint: disable=protected-access
+            if credentials.get("insecure", False):
+                self.client._client.tls_insecure_set(True)  # noqa pylint: disable=protected-access
+            if self.__logger.isEnabledFor(10):
+                self.client._client.enable_logger(self.__logger)  # noqa pylint: disable=protected-access
 
     @staticmethod
     def _get_provisioned_creds(credentials):
@@ -293,18 +224,12 @@ class TBClient(threading.Thread):
         self.__paused = False
 
     def is_connected(self):
-        return self.__is_connected and self.client.rate_limits_received
+        return self.__is_connected
 
     def _on_connect(self, client, userdata, flags, result_code, *extra_params):
-        self.__logger.debug('TB client %s connected to platform', str(client))
-        if ((isinstance(result_code, int) and result_code == 0) or
-                (hasattr(result_code, 'value') and result_code.value == 0)):
+        self.__logger.debug('TB client %s connected to ThingsBoard', str(client))
+        if result_code == 0:
             self.__is_connected = True
-            if self.__initial_connection_done:
-                self.client.rate_limits_received = True  # Added to avoid stuck on reconnect, if rate limits reached,
-                # TODO: move to high priority.
-            else:
-                self.__initial_connection_done = True
         # pylint: disable=protected-access
         self.client._on_connect(client, userdata, flags, result_code, *extra_params) # noqa pylint: disable=protected-access
         try:
@@ -313,6 +238,7 @@ class TBClient(threading.Thread):
                     self.__logger.warning("Connection rate exceeded.")
             else:
                 if result_code.getName().lower() == "connection rate exceeded":
+                    # TODO: Add request for rate limits and apply them.
                     self.__logger.warning("Connection rate exceeded.")
         except Exception as e:
             self.__logger.exception("Error in on_connect callback: %s", exc_info=e)
@@ -322,7 +248,6 @@ class TBClient(threading.Thread):
 
     def _on_disconnect(self, client, userdata, result_code, properties=None):
         # pylint: disable=protected-access
-        self.__is_connected = False
         if self.client._client != client: # noqa pylint: disable=protected-access
             self.__logger.info("TB client %s has been disconnected. Current client for connection is: %s", str(client),
                                str(self.client._client)) # noqa pylint: disable=protected-access
@@ -338,85 +263,56 @@ class TBClient(threading.Thread):
         # self.disconnect()
         self.client.stop()
         self.__stopped = True
-        self.__stop_event.set()
 
     def disconnect(self):
         self.__paused = True
         self.unsubscribe('*')
-        return self.client.disconnect()
+        self.client.disconnect()
 
     def unsubscribe(self, subscription_id):
         self.client.gw_unsubscribe(subscription_id)
         self.client.unsubscribe_from_attribute(subscription_id)
 
-    def connect(self, min_reconnect_delay=5, timeout=None):
+    def connect(self, min_reconnect_delay=5):
         self.__paused = False
         self.__stopped = False
-        self.__min_reconnect_delay = max(min_reconnect_delay, 2)
+        self.__min_reconnect_delay = min_reconnect_delay
 
-        start_connect_time = time()
+        keep_alive = self.__config.get("keep_alive", 120)
         previous_connection_time = time()
-        first_connection = True
-
         try:
             while not self.client.is_connected() and not self.__stopped:
                 if not self.__paused:
                     if self.__stopped:
                         break
-                    if timeout is not None and time() - start_connect_time > timeout:
-                        self.__logger.error("Connection timeout.")
-                        break
-                    if self.client._client.is_connected():
-                        self.__logger.info("Client connected to platform.")
-                        if self.client.rate_limits_received:
-                            self.__logger.info("Rate limits received.")
-                        else:
-                            self.__logger.info("Waiting for rate limits configuration...")
-                    else:
-                        self.__logger.info("Connecting to ThingsBoard...")
+                    self.__logger.debug("connecting to ThingsBoard")
                     try:
-                        if first_connection or time() - previous_connection_time > min_reconnect_delay:
-                            first_connection = False
-                            self.__send_connect()
+                        if time() - previous_connection_time > min_reconnect_delay:
+                            self.client.connect(keepalive=keep_alive,
+                                                min_reconnect_delay=self.__min_reconnect_delay)
                             previous_connection_time = time()
                         else:
                             sleep(1)
                     except ConnectionRefusedError:
                         self.__logger.error("Connection refused. Check ThingsBoard is running.")
-                    except (ssl.SSLEOFError, ssl.SSLZeroReturnError) as e:
-                        self.__logger.warning("Cannot use TLS connection on this port. "
-                                              "Client will try to connect without TLS.")
-                        self.__logger.debug("Error: %s", e)
-                        self.client._client._ssl = False # noqa pylint: disable=protected-access
-                        try:
-                            self.__send_connect()
-                        except Exception:
-                            continue
                     except Exception as e:
-                        self.__logger.error("Error in connect: %s", exc_info=e)
+                        self.__logger.exception(e)
                 sleep(1)
         except Exception as e:
             self.__logger.exception(e)
             sleep(10)
 
-    def __send_connect(self):
-        self.__logger.info(f"Sending connect to {self.__host}:{self.__port}, tls: {self.__tls}...")
-        self.client.connect(keepalive=self.__config.get("keep_alive", 120),
-                            min_reconnect_delay=self.__min_reconnect_delay)
-        self.__logger.info("Connect msg sent to platform.")
-
     def run(self):
         while not self.__stopped:
             try:
-                if self.__stop_event.wait(timeout=0.2):
+                if not self.__stopped:
+                    sleep(.2)
+                else:
                     break
             except KeyboardInterrupt:
                 self.__stopped = True
-                self.__stop_event.set()
-            except TimeoutError:
-                pass
             except Exception as e:
-                self.__logger.exception("Error in main MQTT client loop: %s", exc_info=e)
+                self.__logger.exception(e)
 
     def get_config_folder_path(self):
         return self.__config_folder_path
@@ -430,45 +326,3 @@ class TBClient(threading.Thread):
 
     def is_stopped(self):
         return self.__stopped
-
-    def get_max_payload_size(self):
-        return self.client.max_payload_size # noqa pylint: disable=protected-access
-
-    def update_logger(self):
-        self.__logger.setLevel(getLogger("tb_connection").level)
-        self.__logger.handlers = getLogger("tb_connection").handlers
-        self.__logger.manager = getLogger("tb_connection").manager
-        self.__logger.disabled = getLogger("tb_connection").disabled
-        self.__logger.filters = getLogger("tb_connection").filters
-        self.__logger.propagate = getLogger("tb_connection").propagate
-        self.__logger.parent = getLogger("tb_connection").parent
-        tb_device_mqtt.log = self.__logger
-
-    def get_rate_limits(self):
-        return {
-            'devices_connected_through_gateway_telemetry_messages_rate_limit': deepcopy(self.client._devices_connected_through_gateway_telemetry_messages_rate_limit.__dict__),  # noqa
-            'devices_connected_through_gateway_telemetry_datapoints_rate_limit': deepcopy(self.client._devices_connected_through_gateway_telemetry_datapoints_rate_limit.__dict__),  # noqa
-            'devices_connected_through_gateway_messages_rate_limit': deepcopy(self.client._devices_connected_through_gateway_messages_rate_limit.__dict__),  # noqa
-            'messages_rate_limit': deepcopy(self.client._messages_rate_limit.__dict__),  # noqa
-            'telemetry_rate_limit': deepcopy(self.client._telemetry_rate_limit.__dict__),  # noqa
-            'telemetry_dp_rate_limit': deepcopy(self.client._telemetry_dp_rate_limit.__dict__),  # noqa
-            'max_inflight_messages': self.client._client._max_inflight_messages,  # noqa
-            'max_payload_size': self.client.max_payload_size
-        }
-
-    def is_subscribed_to_service_attributes(self):
-        return GATEWAY_ATTRIBUTES_RESPONSE_TOPIC in self.client._gw_subscriptions.values() and GATEWAY_ATTRIBUTES_TOPIC in self.client._gw_subscriptions.values() # noqa pylint: disable=protected-access
-
-    def update_client_rate_limits_with_previous(self, previous_limits):
-        self.client._devices_connected_through_gateway_telemetry_messages_rate_limit = tb_device_mqtt.RateLimit(
-            previous_limits.get('devices_connected_through_gateway_telemetry_messages_rate_limit', {}))
-        self.client._devices_connected_through_gateway_telemetry_datapoints_rate_limit = tb_device_mqtt.RateLimit(
-            previous_limits.get('devices_connected_through_gateway_telemetry_datapoints_rate_limit', {}))
-        self.client._devices_connected_through_gateway_messages_rate_limit = tb_device_mqtt.RateLimit(
-            previous_limits.get('devices_connected_through_gateway_messages_rate_limit', {}))
-
-        self.client._messages_rate_limit = tb_device_mqtt.RateLimit(previous_limits.get('messages_rate_limit', {})) # noqa pylint: disable=protected-access
-        self.client._telemetry_rate_limit = tb_device_mqtt.RateLimit(previous_limits.get('telemetry_rate_limit', {})) # noqa pylint: disable=protected-access
-        self.client._telemetry_dp_rate_limit = tb_device_mqtt.RateLimit(previous_limits.get('telemetry_dp_rate_limit', {})) # noqa pylint: disable=protected-access
-        self.client.max_inflight_messages_set(previous_limits.get('max_inflight_messages', 20)) # noqa pylint: disable=protected-access
-        self.client.max_payload_size = previous_limits.get('max_payload_size', 8196) # noqa pylint: disable=protected-access

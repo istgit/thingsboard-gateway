@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -12,32 +12,24 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import datetime
-from getpass import getuser
-from logging import getLogger, setLoggerClass
+from logging import getLogger
+from re import search, findall
 from os import environ
 from platform import system as platform_system
-from re import search, findall
-from time import monotonic, sleep
-from typing import Union, TYPE_CHECKING
+from getpass import getuser
 from uuid import uuid4
+from distutils.util import strtobool
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
-from distutils.util import strtobool
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
 from jsonpath_rw import parse
-from orjson import JSONDecodeError, dumps, loads
+from simplejson import JSONDecodeError, dumps, loads
 
-from thingsboard_gateway.gateway.constants import SECURITY_VAR, REPORT_STRATEGY_PARAMETER
-from thingsboard_gateway.gateway.entities.datapoint_key import DatapointKey
-from thingsboard_gateway.gateway.entities.report_strategy_config import ReportStrategyConfig
-from thingsboard_gateway.tb_utility.tb_logger import TbLogger
+from thingsboard_gateway.gateway.constants import SECURITY_VAR
 
-if TYPE_CHECKING:
-    from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-
-setLoggerClass(TbLogger)
 log = getLogger("service")
 
 
@@ -60,19 +52,12 @@ class TBUtility:
         return content
 
     @staticmethod
-    def validate_converted_data(data: Union[dict, 'ConvertedData']):
-        from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
+    def validate_converted_data(data):
+        error = None
+        if error is None and not data.get("deviceName"):
+            error = 'deviceName is empty in data: '
 
-        errors = []
-        if isinstance(data, ConvertedData):
-            if data.device_name is None:
-                errors.append('deviceName is empty')
-            if not data.telemetry and not data.attributes:
-                errors.append('No telemetry and attributes')
-        else:
-            if not data.get('deviceName'):
-                errors.append('deviceName is empty')
-
+        if error is None:
             got_attributes = False
             got_telemetry = False
 
@@ -86,14 +71,14 @@ class TBUtility:
                         break
 
             if got_attributes is False and got_telemetry is False:
-                errors.append('No telemetry and attributes')
+                error = 'No telemetry and attributes in data: '
 
-        if errors:
-            json_data = dumps(data.to_dict()) if isinstance(data, ConvertedData) else dumps(data)
+        if error is not None:
+            json_data = dumps(data)
             if isinstance(json_data, bytes):
-                log.error("Found errors: " + str(errors) + " in data: " + json_data.decode("UTF-8"))
+                log.error(error + json_data.decode("UTF-8"))
             else:
-                log.error("Found errors: " + str(errors) + " in data: " + json_data)
+                log.error(error + json_data)
             return False
         return True
 
@@ -125,15 +110,13 @@ class TBUtility:
         try:
             if isinstance(body, dict) and target_str.split()[0] in body:
                 if value_type.lower() == "string":
-                    full_value = (str(expression[0: max(p1 - 2, 0)]) +
-                                  str(body[target_str.split()[0]]) +
-                                  str(expression[p2 + 1:len(expression)]))
+                    full_value = str(expression[0: max(p1 - 2, 0)]) + str(body[target_str.split()[0]]) + str(expression[p2 + 1:len(expression)])
                 else:
                     full_value = body.get(target_str.split()[0])
             elif isinstance(body, (dict, list)):
                 try:
                     if " " in target_str:
-                        target_str = '.'.join('"' + section_key + '"' if " " in section_key else section_key for section_key in target_str.split('.')) # noqa
+                        target_str = '.'.join('"' + section_key + '"' if " " in section_key else section_key for section_key in target_str.split('.'))
                     jsonpath_expression = parse(target_str)
                     jsonpath_match = jsonpath_expression.find(body)
                     if jsonpath_match:
@@ -174,10 +157,7 @@ class TBUtility:
 
     @staticmethod
     def get_dict_key_by_value(dictionary: dict, value):
-        try:
-            return next(key for key, val in dictionary.items() if val == value)
-        except StopIteration:
-            return None
+        return list(dictionary.values())[list(dictionary.values()).index(value)]
 
     @staticmethod
     def convert_data_type(data, new_type, use_eval=False):
@@ -199,19 +179,6 @@ class TBUtility:
                 return str(evaluated_data)
         except ValueError:
             return str(evaluated_data)
-
-    @staticmethod
-    def convert_key_to_datapoint_key(key, device_report_strategy, key_config, logger=None):
-        key_report_strategy = None
-        if device_report_strategy is not None:
-            key_report_strategy = device_report_strategy
-        if key_config.get(REPORT_STRATEGY_PARAMETER) is not None:
-            try:
-                key_report_strategy = ReportStrategyConfig(key_config.get(REPORT_STRATEGY_PARAMETER))
-            except ValueError:
-                if logger is not None:
-                    logger.trace("Report strategy config is not specified for key %s", key)
-        return DatapointKey(key, key_report_strategy)
 
     # Service methods
 
@@ -313,21 +280,10 @@ class TBUtility:
                 return True
 
     @staticmethod
-    def get_data_size(data):
-        return len(dumps(data))
-
-    @staticmethod
-    def update_main_config_with_env_variables(config):
-        env_variables = TBUtility.get_service_environmental_variables()
-        config['thingsboard'] = {**config['thingsboard'], **env_variables}
-        return config
-
-    @staticmethod
     def get_service_environmental_variables():
         env_variables = {
             'host': environ.get('host'),
             'port': int(environ.get('port')) if environ.get('port') else None,
-            'type': environ.get('type'),
             'accessToken': environ.get('accessToken'),
             'caCert': environ.get('caCert'),
             'privateKey': environ.get('privateKey'),
@@ -344,8 +300,6 @@ class TBUtility:
             env_variables['host'] = environ.get('TB_GW_HOST')
         if environ.get('TB_GW_PORT'):
             env_variables['port'] = int(environ.get('TB_GW_PORT'))
-        if environ.get('TB_GW_SECURITY_TYPE'):
-            env_variables['type'] = environ.get('TB_GW_SECURITY_TYPE')
         if environ.get('TB_GW_ACCESS_TOKEN'):
             env_variables['accessToken'] = environ.get('TB_GW_ACCESS_TOKEN')
         if environ.get('TB_GW_CA_CERT'):
@@ -360,24 +314,10 @@ class TBUtility:
             env_variables['username'] = environ.get('TB_GW_USERNAME')
         if environ.get('TB_GW_PASSWORD'):
             env_variables['password'] = environ.get('TB_GW_PASSWORD')
-
         if environ.get('TB_GW_RATE_LIMITS'):
             env_variables['rateLimits'] = environ.get('TB_GW_RATE_LIMITS')
-            env_variables['messagesRateLimits'] = environ.get('TB_GW_RATE_LIMITS')
-            env_variables['deviceMessagesRateLimits'] = environ.get('TB_GW_RATE_LIMITS')
-            env_variables['deviceRateLimits'] = environ.get('TB_GW_RATE_LIMITS')
         if environ.get('TB_GW_DP_RATE_LIMITS'):
             env_variables['dpRateLimits'] = environ.get('TB_GW_DP_RATE_LIMITS')
-            env_variables['deviceDpRateLimits'] = environ.get('TB_GW_DP_RATE_LIMITS')
-
-        if environ.get('TB_GW_MESSAGES_RATE_LIMITS'):
-            env_variables['messagesRateLimits'] = environ.get('TB_GW_MESSAGES_RATE_LIMITS')
-        if environ.get('TB_GW_DEVICE_MESSAGES_RATE_LIMIT'):
-            env_variables['deviceMessagesRateLimits'] = environ.get('TB_GW_DEVICE_MESSAGES_RATE_LIMIT')
-        if environ.get('TB_GW_DEVICE_RATE_LIMITS'):
-            env_variables['deviceRateLimits'] = environ.get('TB_GW_DEVICE_RATE_LIMITS')
-        if environ.get('TB_GW_DEVICE_DP_RATE_LIMITS'):
-            env_variables['deviceDpRateLimits'] = environ.get('TB_GW_DEVICE_DP_RATE_LIMITS')
 
         converted_env_variables = {}
 
@@ -393,14 +333,3 @@ class TBUtility:
 
         return converted_env_variables
 
-    @staticmethod
-    def while_thread_alive(thread, timeout=10) -> bool:
-        start_time = monotonic()
-
-        while thread.is_alive():
-            if monotonic() - start_time > timeout:
-                return True
-
-            sleep(.1)
-
-        return False

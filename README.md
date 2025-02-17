@@ -25,8 +25,7 @@ Thingsboard IoT Gateway provides following features:
  - [**ODBC** connector](https://thingsboard.io/docs/iot-gateway/config/odbc/) to collect data from ODBC databases.
  - [**FTP** connector](https://thingsboard.io/docs/iot-gateway/config/ftp/) to collect data from files via FTP.
  - [**Socket** connector](https://thingsboard.io/docs/iot-gateway/config/socket/) to collect data from devices using sockets.
- - [**XMPP** connector](https://thingsboard.io/docs/iot-gateway/config/xmpp) to collect data from XMPP devices.
- - [**OCPP** connector](https://thingsboard.io/docs/iot-gateway/config/ocpp) to collect data from OCPP devices.
+ - **XMPP** connector to collect data from XMPP devices.
  - [**Custom** connector](https://thingsboard.io/docs/iot-gateway/custom/) to collect data from custom protocols.
  - **Persistence** of collected data to guarantee data delivery in case of network and hardware failures.
  - **Automatic reconnect** to Thingsboard cluster.
@@ -35,6 +34,7 @@ Thingsboard IoT Gateway provides following features:
  - [RPC gateway methods](https://thingsboard.io/docs/iot-gateway/guides/how-to-use-gateway-rpc-methods/) to control and get information from the gateway through ThingsBoard WEB interface.
  - [Remote shell](https://thingsboard.io/docs/iot-gateway/guides/how-to-enable-remote-shell/) to control operating system with ThingsBoard IoT Gateway from your ThingsBoard platform instance.
  - [Device renaming/removing handling](https://thingsboard.io/docs/iot-gateway/how-device-removing-renaming-works/) to keep the device list in actual state.
+ - [Gateway Configurator](https://thingsboard.io/docs/iot-gateway/guides/how-to-configure-gateway-using-configurator/) easy-to-use CLI configurator.
  - **HOT Reload** for developers.
   
 ### Architecture  
@@ -47,10 +47,11 @@ Especially, when we are talking about language APIs and existing libraries to wo
 The Gateway provides simple integration APIs, and encapsulates common Thingsboard related tasks: device provisioning, local data persistence and delivery, message converters and other.  
 For processing data from devices you also can write custom converter, it will receive information from device and send it to converter to convert to unified format before sending it to the ThingsBoard cluster.  
 
-## Support and communications
+## Support
 
- - [GitHub discussions](https://github.com/thingsboard/thingsboard-gateway/discussions)
- - [Stackoverflow](http://stackoverflow.com/questions/tagged/thingsboard-gateway)
+ - [Community chat](https://gitter.im/thingsboard/chat)
+ - [Q&A forum](https://groups.google.com/forum/#!forum/thingsboard)
+ - [Stackoverflow](http://stackoverflow.com/questions/tagged/thingsboard)
  
 **Don't forget to star the repository to show your ❤️ and support.**
 

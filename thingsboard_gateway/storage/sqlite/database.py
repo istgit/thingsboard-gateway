@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ from thingsboard_gateway.storage.sqlite.database_connector import DatabaseConnec
 from thingsboard_gateway.storage.sqlite.database_action_type import DatabaseActionType
 from thingsboard_gateway.storage.sqlite.storage_settings import StorageSettings
 
+log = getLogger("database")
+
 
 class Database(Thread):
     """
@@ -34,32 +36,32 @@ class Database(Thread):
         ------------- ALL OF THIS IN AN ATOMIC WAY ---------
     """
 
-    def __init__(self, config, processing_queue: Queue, logger, stopped):
-        self.__log = logger
+    def __init__(self, config, processing_queue: Queue):
         super().__init__()
         self.daemon = True
-        self.stopped = stopped
         self.settings = StorageSettings(config)
 
         if not exists(self.settings.data_folder_path):
             directory = dirname(self.settings.data_folder_path)
             if not exists(directory):
-                self.__log.info("SQLite database file not found, creating new one...")
+                log.info("SQLite database file not found, creating new one...")
                 try:
                     makedirs(directory)
-                    self.__log.info("Directory %s created" % directory)
+                    log.info("Directory %s created" % directory)
                 except Exception as e:
-                    self.__log.exception("Failed to create directory %s" % directory, exc_info=e)
+                    log.exception("Failed to create directory %s" % directory, exc_info=e)
             with open(self.settings.data_folder_path, 'w'):
-                self.__log.info("SQLite database file created at %s" % self.settings.data_folder_path)
+                log.info("SQLite database file created at %s" % self.settings.data_folder_path)
 
         # Pass settings to connector
-        self.db = DatabaseConnector(self.settings, self.__log, self.stopped)
+        self.db = DatabaseConnector(self.settings)
 
         self.db.connect()
 
         # process Queue
         self.processQueue = processing_queue
+
+        self.__stopped = False
 
         self.__last_msg_check = time()
 
@@ -72,13 +74,13 @@ class Database(Thread):
             self.db.commit()
         except Exception as e:
             self.db.rollback()
-            self.__log.exception("Failed to create table! Error: %s", e)
+            log.exception(e)
 
     def run(self):
-        while not self.stopped.is_set():
+        while True:
             self.process()
-            if self.processQueue.empty():
-                sleep(.1)
+
+            sleep(.2)
 
     def process(self):
         try:
@@ -87,66 +89,56 @@ class Database(Thread):
                 self.delete_data_lte(self.settings.messages_ttl_in_days)
 
             # Signalization so that we can spam call process()
-            if not self.stopped.is_set() and self.processQueue:
+            if not self.__stopped and self.processQueue:
                 while self.processQueue.qsize() > 0:
-                    try:
 
-                        req = self.processQueue.get()
+                    req = self.processQueue.get()
 
-                        self.__log.debug("Processing %s" % req.type)
-                        if req.type is DatabaseActionType.WRITE_DATA_STORAGE:
+                    log.debug("Processing %s" % req.type)
+                    if req.type is DatabaseActionType.WRITE_DATA_STORAGE:
 
-                            message = req.data
+                        message = req.data
 
-                            timestamp = time()
+                        timestamp = time()
 
-                            self.db.execute('''INSERT INTO messages (timestamp, message) VALUES (?, ?);''',
-                                            [timestamp, message])
-                            self.db.commit()
-                    except Exception as e:
-                        self.__log.error("Failed to process request! Error: %s", e)
+                        self.db.execute('''INSERT INTO messages (timestamp, message) VALUES (?, ?);''',
+                                        [timestamp, message])
+
+                        self.db.commit()
             else:
-                self.__log.info("Storage is closed!")
+                log.error("Storage is closed!")
 
         except Exception as e:
             self.db.rollback()
-            self.__log.exception("Failed to write data to storage! Error: %s", e)
+            log.exception(e)
 
     def read_data(self):
         try:
-            data = self.db.execute('''SELECT timestamp, message FROM messages ORDER BY timestamp ASC LIMIT 0, %i;''' %
-                                   self.settings.max_read_records_count)
+            data = self.db.execute('''SELECT timestamp, message FROM messages ORDER BY timestamp ASC LIMIT 0, 50;''')
             return data
         except Exception as e:
             self.db.rollback()
-            self.__log.exception("Failed to read data from storage! Error: %s", e)
+            log.exception(e)
 
     def delete_data(self, ts):
         try:
             data = self.db.execute('''DELETE FROM messages WHERE timestamp <= ?;''', [ts,])
-            self.db.commit()
             return data
         except Exception as e:
             self.db.rollback()
-            self.__log.exception("Failed to delete data from storage! Error: %s", e)
+            log.exception(e)
 
     def delete_data_lte(self, days):
         try:
             ts = (datetime.datetime.now() - datetime.timedelta(days=days)).timestamp()
             data = self.db.execute('''DELETE FROM messages WHERE timestamp <= ? ;''', [ts])
-            self.db.commit()
             return data
         except Exception as e:
             self.db.rollback()
-            self.__log.exception("Failed to delete data from storage! Error: %s", e)
+            log.exception(e)
 
     def setProcessQueue(self, process_queue):
         self.processQueue = process_queue
 
     def closeDB(self):
         self.db.close()
-
-    def update_logger(self):
-        self.__log = getLogger("storage")
-        self.db.update_logger()
-        self.__log.info("Logger updated")

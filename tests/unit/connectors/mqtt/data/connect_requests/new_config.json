@@ -12,7 +12,7 @@
       "type": "anonymous"
     }
   },
-  "mapping": [],
+  "dataMapping": [],
   "requestsMapping": {
     "serverSideRpc": {},
     "connectRequests": [

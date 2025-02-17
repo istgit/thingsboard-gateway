@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 #     limitations under the License.
 #
 
+from logging import getLogger
 from os import chdir, getcwd
 from subprocess import PIPE, Popen, STDOUT, TimeoutExpired
 
@@ -45,8 +46,7 @@ class RemoteShell:
             chdir(cwd)
         if command.split():
             if self.command_in_progress is not None:
-                self.__logger.debug("Received a new command: \"%s\", during old command is running,\
-                    terminating old command...", command)
+                self.__logger.debug("Received a new command: \"%s\", during old command is running, terminating old command...", command)
                 old_command = self.command_in_progress.args
                 self.terminate_command()
                 self.__logger.debug("Old command: \"%s\" terminated.", old_command)
@@ -57,8 +57,7 @@ class RemoteShell:
                 self.command_in_progress = "cd"
             else:
                 self.__logger.debug("Run command in remote shell: %s", command)
-                self.command_in_progress = Popen(command, shell=True, stdout=PIPE,
-                                                 stdin=PIPE, stderr=STDOUT, universal_newlines=True)
+                self.command_in_progress = Popen(command, shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT, universal_newlines=True)
             result.update({"ok": True})
         return result
 

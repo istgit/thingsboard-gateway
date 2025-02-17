@@ -12,18 +12,18 @@
     "consoleHandler": {
       "class": "logging.StreamHandler",
       "formatter": "LogFormatter",
-      "level": 0,
+      "level": "DEBUG",
       "stream": "ext://sys.stdout"
     },
     "databaseHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/database.log",
       "backupCount": 1,
       "encoding": "utf-8"
     },
     "serviceHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/service.log",
       "backupCount": 7,
@@ -32,7 +32,7 @@
       "encoding": "utf-8"
     },
     "connectorHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/connector.log",
       "backupCount": 7,
@@ -41,7 +41,7 @@
       "encoding": "utf-8"
     },
     "converterHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/converter.log",
       "backupCount": 7,
@@ -50,7 +50,7 @@
       "encoding": "utf-8"
     },
     "tb_connectionHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/tb_connection.log",
       "backupCount": 7,
@@ -59,7 +59,7 @@
       "encoding": "utf-8"
     },
     "storageHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/storage.log",
       "backupCount": 7,
@@ -68,7 +68,7 @@
       "encoding": "utf-8"
     },
     "extensionHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
+      "class": "thingsboard_gateway.tb_utility.tb_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
       "filename": "./logs/extension.log",
       "backupCount": 7,
@@ -83,7 +83,7 @@
         "databaseHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "service": {
@@ -91,7 +91,7 @@
         "serviceHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "connector": {
@@ -99,7 +99,7 @@
         "connectorHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "converter": {
@@ -107,7 +107,7 @@
         "converterHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "tb_connection": {
@@ -115,7 +115,7 @@
         "tb_connectionHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "storage": {
@@ -123,7 +123,7 @@
         "storageHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "extension": {
@@ -131,12 +131,12 @@
         "extensionHandler",
         "consoleHandler"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     }
   },
   "root": {
-    "level": "ERROR",
+    "level": "DEBUG",
     "handlers": [
       "consoleHandler"
     ]

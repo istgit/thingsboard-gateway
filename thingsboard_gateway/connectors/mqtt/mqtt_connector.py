@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@ import random
 import socket
 import ssl
 import string
-from queue import Queue, Empty
+from queue import Queue
 from re import fullmatch, match, search
-from threading import Thread, Event
+from threading import Thread
 from time import sleep, time
 
 import simplejson
 
 from thingsboard_gateway.connectors.mqtt.backward_compatibility_adapter import BackwardCompatibilityAdapter
+from thingsboard_gateway.gateway.constants import SEND_ON_CHANGE_PARAMETER, DEFAULT_SEND_ON_CHANGE_VALUE, \
+    ATTRIBUTES_PARAMETER, TELEMETRY_PARAMETER, SEND_ON_CHANGE_TTL_PARAMETER, DEFAULT_SEND_ON_CHANGE_INFINITE_TTL_VALUE
 from thingsboard_gateway.gateway.constant_enums import Status
 from thingsboard_gateway.connectors.connector import Connector
 from thingsboard_gateway.connectors.mqtt.mqtt_decorators import CustomCollectStatistics
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.statistics.decorators import CollectAllReceivedBytesStatistics
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
+from thingsboard_gateway.gateway.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
 
 try:
@@ -39,7 +39,7 @@ try:
     from paho.mqtt.packettypes import PacketTypes
 except ImportError:
     print("paho-mqtt library not found")
-    TBUtility.install_package("paho-mqtt")
+    TBUtility.install_package("tb-paho-mqtt-client")
     from paho.mqtt.client import Client, Properties
     from paho.mqtt.packettypes import PacketTypes
 
@@ -112,21 +112,6 @@ class MqttConnector(Connector, Thread):
         self.__gateway = gateway  # Reference to TB Gateway
         self._connector_type = connector_type  # Should be "mqtt"
 
-        # Set up lifecycle flags ---------------------------------------------------------------------------------------
-        self._connected = False
-        self.__stopped = False
-        self.__stop_event = Event()
-        self.daemon = True
-
-        self.__log = init_logger(self.__gateway, config['name'],
-                                 config.get('logLevel', 'INFO'),
-                                 enable_remote_logging=config.get('enableRemoteLogging', False),
-                                 is_connector_logger=True)
-        self.__converter_log = init_logger(self.__gateway, config['name'] + '_converter',
-                                           config.get('logLevel', 'INFO'),
-                                           enable_remote_logging=config.get('enableRemoteLogging', False),
-                                           is_converter_logger=True, attr_name=config['name'])
-
         # check if the configuration is in the old format
         using_old_config_format_detected = BackwardCompatibilityAdapter.is_old_config_format(config)
         if using_old_config_format_detected:
@@ -136,6 +121,8 @@ class MqttConnector(Connector, Thread):
             self.config = config
             self.__id = self.config.get('id')
 
+        self.__log = init_logger(self.__gateway, self.config['name'], self.config.get('logLevel', 'INFO'),
+                                 enable_remote_logging=self.config.get('enableRemoteLogging', False))
         self.statistics = {'MessagesReceived': 0, 'MessagesSent': 0}
         self.__subscribes_sent = {}
 
@@ -144,9 +131,15 @@ class MqttConnector(Connector, Thread):
 
         # Extract main sections from configuration ---------------------------------------------------------------------
         self.__broker = config.get('broker')
-        if not self.__broker:
-            self.__log.error('Broker configuration is missing!')
-            return
+        self.__send_data_only_on_change = self.__broker.get(SEND_ON_CHANGE_PARAMETER,
+                                                            self.config.get(SEND_ON_CHANGE_PARAMETER,
+                                                                            DEFAULT_SEND_ON_CHANGE_VALUE))
+        self.__send_data_only_on_change_ttl = self.__broker.get(SEND_ON_CHANGE_TTL_PARAMETER,
+                                                                self.config.get(SEND_ON_CHANGE_TTL_PARAMETER,
+                                                                                DEFAULT_SEND_ON_CHANGE_INFINITE_TTL_VALUE))
+
+        # for sendDataOnlyOnChange param
+        self.__topic_content = {}
 
         self.__mapping = []
         self.__server_side_rpc = []
@@ -157,10 +150,8 @@ class MqttConnector(Connector, Thread):
 
         self.__shared_custom_converters = {}
 
-        mapping_key = 'mapping' if self.config.get('mapping') else 'dataMapping'
-
         mandatory_keys = {
-            mapping_key: ['topicFilter', 'converter'],
+            "dataMapping": ['topicFilter', 'converter'],
             "serverSideRpc": ['deviceNameFilter', 'methodFilter', 'requestTopicExpression', 'valueExpression'],
             "connectRequests": ['topicFilter'],
             "disconnectRequests": ['topicFilter'],
@@ -169,7 +160,7 @@ class MqttConnector(Connector, Thread):
         }
 
         # Mappings, i.e., telemetry/attributes-push handlers provided by user via configuration file
-        self.load_handlers(mapping_key, mandatory_keys[mapping_key], self.__mapping)
+        self.load_handlers('dataMapping', mandatory_keys['dataMapping'], self.__mapping)
 
         # RPCs, i.e., remote procedure calls (ThingsBoard towards devices) handlers
         self.load_handlers('serverSideRpc', mandatory_keys['serverSideRpc'], self.__server_side_rpc)
@@ -195,20 +186,19 @@ class MqttConnector(Connector, Thread):
         # Set up external MQTT broker connection -----------------------------------------------------------------------
         client_id = self.__broker.get("clientId", ''.join(random.choice(string.ascii_lowercase) for _ in range(23)))
 
-        self._cleanSession = self.__broker.get("cleanSession", True)
-        self._cleanStart = self.__broker.get("cleanStart", True)
+        self._cleanSession = self.__broker.get("cleanSession",True)
+        self._cleanStart = self.__broker.get("cleanStart",True)
         self._sessionExpiryInterval = self.__broker.get("sessionExpiryInterval", 0)
 
         self._mqtt_version = self.__broker.get('version', 5)
         try:
             if self._mqtt_version != 5:
-                self._client = Client(client_id=client_id, clean_session=self._cleanSession,
-                                      protocol=MQTT_VERSIONS[self._mqtt_version])
+                self._client = Client(client_id, clean_session=self._cleanSession, protocol=MQTT_VERSIONS[self._mqtt_version])
             else:
-                self._client = Client(client_id=client_id, protocol=MQTT_VERSIONS[self._mqtt_version])
+                self._client = Client(client_id, protocol=MQTT_VERSIONS[self._mqtt_version])
         except KeyError:
             self.__log.error('Unknown MQTT version. Starting up on version 5...')
-            self._client = Client(client_id=client_id, protocol=MQTTv5)
+            self._client = Client(client_id, protocol=MQTTv5)
             self._mqtt_version = 5
 
         self.name = config.get("name", self.__broker.get(
@@ -216,8 +206,8 @@ class MqttConnector(Connector, Thread):
             'Mqtt Broker ' + ''.join(random.choice(string.ascii_lowercase) for _ in range(5))))
 
         if "username" in self.__broker["security"]:
-            self._client.username_pw_set(self.__broker["security"].get("username"),
-                                         self.__broker["security"].get("password"))
+            self._client.username_pw_set(self.__broker["security"]["username"],
+                                         self.__broker["security"]["password"])
 
         if "caCert" in self.__broker["security"] \
                 or self.__broker["security"].get("type", "none").lower() == "tls":
@@ -251,14 +241,22 @@ class MqttConnector(Connector, Thread):
         self._client.on_disconnect = self._on_disconnect
         # self._client.on_log = self._on_log
 
-        self.__msg_queue = Queue(self.__broker.get('maxMessageQueue', 1000000000))
-        self.__workers_thread_pool = []
-        self.__max_msg_number_for_worker = self.__broker.get('maxMessageNumberPerWorker', 10)
-        self.__max_number_of_workers = self.__broker.get('maxNumberOfWorkers', 100)
+        # Set up lifecycle flags ---------------------------------------------------------------------------------------
+        self._connected = False
+        self.__stopped = False
+        self.daemon = True
 
-        self._on_message_queue = Queue(self.__broker.get('maxProcessingMessageQueue', 1000000000))
+        self.__msg_queue = Queue()
+        self.__workers_thread_pool = []
+        self.__max_msg_number_for_worker = config['broker'].get('maxMessageNumberPerWorker', 10)
+        self.__max_number_of_workers = config['broker'].get('maxNumberOfWorkers', 100)
+
+        self._on_message_queue = Queue()
         self._on_message_thread = Thread(name='On Message', target=self._process_on_message, daemon=True)
         self._on_message_thread.start()
+
+    def is_filtering_enable(self, device_name):
+        return self.__send_data_only_on_change
 
     def get_config(self):
         return self.config
@@ -266,21 +264,18 @@ class MqttConnector(Connector, Thread):
     def get_type(self):
         return self._connector_type
 
-    @staticmethod
-    def __add_ts_to_test_message(msg, ts_name):
-        msg = simplejson.loads(msg.decode('utf-8').replace("'", '"'))
-        msg[ts_name] = int(time() * 1000)
-        return simplejson.dumps(msg).encode('utf-8')
+    def get_ttl_for_duplicates(self, device_name):
+        return self.__send_data_only_on_change_ttl
 
     def load_handlers(self, handler_flavor, mandatory_keys, accepted_handlers_list):
         handler_configuration = self.config.get(handler_flavor)
         if handler_configuration is None:
             request_mapping_config = self.config.get("requestsMapping", {})
-            if isinstance(request_mapping_config, dict):
-                handler_configuration = None
+            if isinstance(request_mapping_config, list):
+                handler_configuration = []
                 for request_mapping in request_mapping_config:
-                    if request_mapping == handler_flavor:
-                        handler_configuration = request_mapping_config[request_mapping]
+                    if request_mapping.get("requestType") == handler_flavor:
+                        handler_configuration.append(request_mapping.get("requestValue"))
 
         if not handler_configuration:
             self.__log.debug("'%s' section missing from configuration", handler_flavor)
@@ -328,46 +323,42 @@ class MqttConnector(Connector, Thread):
         try:
             self.__connect()
         except Exception as e:
-            self.__log.exception("Error in connector main loop: %s", e)
-
-        while not self.__stopped:
+            self.__log.exception(e)
             try:
-                if not self._connected:
-                    self.__connect()
-
-                self.__threads_manager()
-
-                self.__stop_event.wait(timeout=0.2)
-            except TimeoutError:
-                pass
+                self.close()
             except Exception as e:
-                self.__log.exception("Error in connector main loop: %s", e)
+                self.__log.exception(e)
+
+        while True:
+            if self.__stopped:
+                break
+            elif not self._connected:
+                self.__connect()
+            self.__threads_manager()
+            sleep(.2)
 
     def __connect(self):
         while not self._connected and not self.__stopped:
             try:
                 if self._mqtt_version != 5:
-                    self._client.connect(self.__broker['host'], self.__broker.get('port', 1883))
+                    self._client.connect(self.__broker['host'],
+                                     self.__broker.get('port', 1883))
                 else:
-                    properties = Properties(PacketTypes.CONNECT)
+                    properties=Properties(PacketTypes.CONNECT)
                     properties.SessionExpiryInterval = self._sessionExpiryInterval
                     self._client.connect(self.__broker['host'],
-                                         self.__broker.get('port', 1883),
-                                         clean_start=self._cleanStart,
-                                         properties=properties)
+                                     self.__broker.get('port', 1883),
+                                     clean_start = self._cleanStart,
+                                     properties = properties)
                 self._client.loop_start()
                 if not self._connected:
                     sleep(1)
             except (ConnectionRefusedError, ConnectionResetError, ssl.SSLEOFError, socket.timeout) as e:
-                self.__log.error("Error while connecting to broker %s: %s", self.get_name(), e)
-                sleep(10)
-            except Exception as e:
-                self.__log.exception("Error while connecting to broker %s: %s", self.get_name(), e)
+                self.__log.error(e)
                 sleep(10)
 
     def close(self):
         self.__stopped = True
-        self.__stop_event.set()
         try:
             self._client.disconnect()
         except Exception as e:
@@ -444,7 +435,7 @@ class MqttConnector(Connector, Thread):
                         if module:
                             self.__log.debug('Converter %s for topic %s - found!', converter_class_name,
                                              mapping["topicFilter"])
-                            converter = module(mapping, self.__converter_log)
+                            converter = module(mapping, self.__log)
                             if sharing_id:
                                 self.__shared_custom_converters[sharing_id] = converter
                         else:
@@ -542,7 +533,6 @@ class MqttConnector(Connector, Thread):
 
     def _save_converted_msg(self, topic, data):
         if self.__gateway.send_to_storage(self.name, self.get_id(), data) == Status.SUCCESS:
-            StatisticsService.count_connector_message(self.name, stat_parameter_name='storageMsgPushed')
             self.statistics['MessagesSent'] += 1
             self.__log.debug("Successfully converted message from topic %s", topic)
 
@@ -567,9 +557,6 @@ class MqttConnector(Connector, Thread):
                 self.__workers_thread_pool.remove(worker)
 
     def _on_message(self, client, userdata, message):
-        StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
-        StatisticsService.count_connector_bytes(self.name, message.payload,
-                                                stat_parameter_name='connectorBytesReceived')
         self._on_message_queue.put((client, userdata, message))
 
     @staticmethod
@@ -582,22 +569,20 @@ class MqttConnector(Connector, Thread):
             device_name_match = search(device_info["deviceNameExpression"], topic)
             if device_name_match is not None:
                 found_device_name = device_name_match.group(0)
-        elif device_info.get('deviceNameExpressionSource') == 'message':
+        elif device_info.get('deviceNameExpressionSource') == 'message' or device_info.get(
+                'deviceNameExpression') == 'constant':
             found_device_name = TBUtility.get_value(device_info["deviceNameExpression"], content,
                                                     expression_instead_none=True)
-        elif device_info.get('deviceNameExpressionSource') == 'constant':
-            found_device_name = device_info["deviceNameExpression"]
 
         # Get device type (if any), either from topic or from content
         if device_info.get("deviceProfileExpressionSource") == 'topic':
             device_type_match = search(device_info["deviceProfileExpression"], topic)
             found_device_type = device_type_match.group(0) if device_type_match is not None else device_info[
                 "deviceProfileExpression"]
-        elif device_info.get("deviceProfileExpressionSource") == 'message':
+        elif device_info.get("deviceProfileExpressionSource") == 'message' or device_info.get(
+                'deviceNameExpression') == 'constant':
             found_device_type = TBUtility.get_value(device_info["deviceProfileExpression"], content,
                                                     expression_instead_none=True)
-        elif device_info.get("deviceProfileExpressionSource") == 'constant':
-            found_device_type = TBUtility.get_value(device_info["deviceProfileExpression"], content,)
 
         return found_device_name, found_device_type
 
@@ -624,6 +609,14 @@ class MqttConnector(Connector, Thread):
                         available_converters = self.__mapping_sub_topics[topic]
                         for converter in available_converters:
                             try:
+                                # check if data is equal
+                                if converter.config.get('sendDataOnlyOnChange', False) and self.__topic_content.get(
+                                        message.topic) == content:
+                                    request_handled = True
+                                    continue
+
+                                self.__topic_content[message.topic] = content
+
                                 request_handled = self.put_data_to_convert(converter, message, content)
                             except Exception as e:
                                 self.__log.exception(e)
@@ -769,8 +762,8 @@ class MqttConnector(Connector, Thread):
                 self.__log.debug("Received message to topic \"%s\" with unknown interpreter data: \n\n\"%s\"",
                                  message.topic,
                                  content)
-            else:
-                sleep(.2)
+
+            sleep(.2)
 
     def notify_attribute(self, incoming_data, attribute_name, topic_expression, value_expression, retain):
         if incoming_data.get("device") is None or incoming_data.get("value", incoming_data.get('values')) is None:
@@ -791,7 +784,7 @@ class MqttConnector(Connector, Thread):
 
         self._client.publish(topic, data, retain=retain).wait_for_publish()
 
-    @CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
+    @StatisticsService.CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
     def on_attributes_update(self, content):
         if self.__attribute_updates:
             for attribute_update in self.__attribute_updates:
@@ -836,157 +829,139 @@ class MqttConnector(Connector, Thread):
             self.__log.error("Attribute updates config not found.")
 
     def __process_rpc_request(self, content, rpc_config):
-        try:
-            # This handler seems able to handle the request
-            self.__log.info("Candidate RPC handler found")
+        # This handler seems able to handle the request
+        self.__log.info("Candidate RPC handler found")
 
-            expects_response = rpc_config.get("responseTopicExpression")
-            defines_timeout = rpc_config.get("responseTimeout")
+        expects_response = rpc_config.get("responseTopicExpression")
+        defines_timeout = rpc_config.get("responseTimeout")
 
-            # 2-way RPC setup
-            if expects_response and defines_timeout:
-                expected_response_topic = rpc_config["responseTopicExpression"] \
-                    .replace("${methodName}", str(content['data']['method'])) \
-                    .replace("${requestId}", str(content["data"]["id"]))
-
-                if content.get('device'):
-                    expected_response_topic = expected_response_topic.replace("${deviceName}", str(content["device"]))
-
-                expected_response_topic = TBUtility.replace_params_tags(expected_response_topic, content)
-
-                timeout = time() * 1000 + rpc_config.get("responseTimeout")
-
-                # Start listening on the response topic
-                self.__log.info("Subscribing to: %s", expected_response_topic)
-                self.__subscribe(expected_response_topic, rpc_config.get("responseTopicQoS", 1))
-
-                # Wait for subscription to be carried out
-                sub_response_timeout = 10
-
-                while expected_response_topic in self.__subscribes_sent.values():
-                    sub_response_timeout -= 1
-                    sleep(0.1)
-                    if sub_response_timeout == 0:
-                        break
-
-                # Ask the gateway to enqueue this as an RPC response
-                self.__gateway.register_rpc_request_timeout(content,
-                                                            timeout,
-                                                            expected_response_topic,
-                                                            self.rpc_cancel_processing)
-
-                # Wait for RPC to be successfully enqueued, which never fails.
-                while self.__gateway.is_rpc_in_progress(expected_response_topic):
-                    sleep(0.1)
-
-            elif expects_response and not defines_timeout:
-                self.__log.info("2-way RPC without timeout: treating as 1-way")
-
-            # Actually reach out for the device
-            request_topic: str = rpc_config.get("requestTopicExpression") \
+        # 2-way RPC setup
+        if expects_response and defines_timeout:
+            expected_response_topic = rpc_config["responseTopicExpression"] \
                 .replace("${methodName}", str(content['data']['method'])) \
                 .replace("${requestId}", str(content["data"]["id"]))
 
             if content.get('device'):
-                request_topic = request_topic.replace("${deviceName}", str(content["device"]))
+                expected_response_topic = expected_response_topic.replace("${deviceName}", str(content["device"]))
 
-            request_topic = TBUtility.replace_params_tags(request_topic, content)
+            expected_response_topic = TBUtility.replace_params_tags(expected_response_topic, content)
 
-            data_to_send_tags = TBUtility.get_values(rpc_config.get('valueExpression'), content['data'],
-                                                     'params',
-                                                     get_tag=True)
-            data_to_send_values = TBUtility.get_values(rpc_config.get('valueExpression'), content['data'],
-                                                       'params',
-                                                       expression_instead_none=True)
+            timeout = time() * 1000 + rpc_config.get("responseTimeout")
 
-            data_to_send = rpc_config.get('valueExpression')
-            for (tag, value) in zip(data_to_send_tags, data_to_send_values):
-                data_to_send = data_to_send.replace('${' + tag + '}', simplejson.dumps(value))
+            # Start listening on the response topic
+            self.__log.info("Subscribing to: %s", expected_response_topic)
+            self.__subscribe(expected_response_topic, rpc_config.get("responseTopicQoS", 1))
 
-            try:
-                self.__log.info("Publishing to: %s with data %s", request_topic, data_to_send)
-                result = None
-                try:
-                    result = self._publish(request_topic, data_to_send, rpc_config.get('retain', False))
-                except Exception as e:
-                    self.__log.exception("Error during publishing to target broker: %r", e)
-                    self.__gateway.send_rpc_reply(device=content.get("device"),
-                                                  req_id=content["data"]["id"],
-                                                  content={
-                                                      "error": str.format("Error on publish to target broker: %r",
-                                                                          str(e))},
-                                                  success_sent=False, to_connector_rpc=True if content.get('device') is None else False) # noqa
-                    return
-                if not expects_response or not defines_timeout:
-                    self.__log.info("One-way RPC: sending ack to ThingsBoard immediately")
-                    self.__gateway.send_rpc_reply(device=content.get('device'), req_id=content["data"]["id"],
-                                                  success_sent=result is not None, to_connector_rpc=True if content.get('device') is None else False) # noqa
+            # Wait for subscription to be carried out
+            sub_response_timeout = 10
 
-                # Everything went out smoothly: RPC is served
-                return
-            except Exception as e:
-                self.__log.exception("Error during publishing RPC response: ", exc_info=e)
-        except Exception as e:
-            self.__log.exception("Error during processing RPC request: ", exc_info=e)
+            while expected_response_topic in self.__subscribes_sent.values():
+                sub_response_timeout -= 1
+                sleep(0.1)
+                if sub_response_timeout == 0:
+                    break
 
-    @CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
-    def server_side_rpc_handler(self, content):
+            # Ask the gateway to enqueue this as an RPC response
+            self.__gateway.register_rpc_request_timeout(content,
+                                                        timeout,
+                                                        expected_response_topic,
+                                                        self.rpc_cancel_processing)
+
+            # Wait for RPC to be successfully enqueued, which never fails.
+            while self.__gateway.is_rpc_in_progress(expected_response_topic):
+                sleep(0.1)
+
+        elif expects_response and not defines_timeout:
+            self.__log.info("2-way RPC without timeout: treating as 1-way")
+
+        # Actually reach out for the device
+        request_topic: str = rpc_config.get("requestTopicExpression") \
+            .replace("${methodName}", str(content['data']['method'])) \
+            .replace("${requestId}", str(content["data"]["id"]))
+
+        if content.get('device'):
+            request_topic = request_topic.replace("${deviceName}", str(content["device"]))
+
+        request_topic = TBUtility.replace_params_tags(request_topic, content)
+
+        data_to_send_tags = TBUtility.get_values(rpc_config.get('valueExpression'), content['data'],
+                                                 'params',
+                                                 get_tag=True)
+        data_to_send_values = TBUtility.get_values(rpc_config.get('valueExpression'), content['data'],
+                                                   'params',
+                                                   expression_instead_none=True)
+
+        data_to_send = rpc_config.get('valueExpression')
+        for (tag, value) in zip(data_to_send_tags, data_to_send_values):
+            data_to_send = data_to_send.replace('${' + tag + '}', simplejson.dumps(value))
+
         try:
-            self.__log.info("Incoming server-side RPC: %s", content)
-
-            if content.get('data') is None:
-                content['data'] = {'params': content['params'], 'method': content['method'], 'id': content['id']}
-
-            rpc_method = content['data']['method']
-
-            # check if RPC type is connector RPC (can be only 'get' or 'set')
+            self.__log.info("Publishing to: %s with data %s", request_topic, data_to_send)
             try:
-                (connector_type, rpc_method_name) = rpc_method.split('_')
-                if connector_type == self._connector_type:
-                    rpc_method = rpc_method_name
-            except ValueError:
-                pass
+                self._publish(request_topic, data_to_send, rpc_config.get('retain', False))
+            except Exception as e:
+                self.__log.exception("Error during publishing to target broker: %r", e)
+                self.__gateway.send_rpc_reply(device=content["device"],
+                                              req_id=content["data"]["id"],
+                                              content={"error": str.format("Error during publishing to target broker: %r",str(e))},
+                                              success_sent=False)
+                return
+            if not expects_response or not defines_timeout:
+                self.__log.info("One-way RPC: sending ack to ThingsBoard immediately")
+                self.__gateway.send_rpc_reply(device=content.get('device', ''), req_id=content["data"]["id"],
+                                              success_sent=True)
 
-            if content.get('device'):
-                # check if RPC method is reserved get/set
-                if rpc_method == 'get' or rpc_method == 'set':
-                    params = {}
-                    for param in content['data']['params'].split(';'):
-                        try:
-                            (key, value) = param.split('=')
-                        except ValueError:
-                            continue
-
-                        if key and value:
-                            params[key] = value
-
-                    params['valueExpression'] = params.pop('value', None)
-
-                    return self.__process_rpc_request(content, params)
-                else:
-                    # Check whether one of my RPC handlers can handle this request
-                    for rpc_config in self.__server_side_rpc:
-                        if search(rpc_config["deviceNameFilter"], content["device"]) \
-                                and search(rpc_config["methodFilter"], rpc_method) is not None:
-
-                            return self.__process_rpc_request(content, rpc_config)
-
-                    self.__log.error("RPC not handled: %s", content)
-            else:
-                return self.__process_rpc_request(content, content['data']['params'])
+            # Everything went out smoothly: RPC is served
+            return
         except Exception as e:
-            self.__log.exception("Error during handling RPC request", exc_info=e)
+            self.__log.exception(e)
+
+    @StatisticsService.CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
+    def server_side_rpc_handler(self, content):
+        self.__log.info("Incoming server-side RPC: %s", content)
+
+        if content.get('data') is None:
+            content['data'] = {'params': content['params'], 'method': content['method'], 'id': content['id']}
+
+        rpc_method = content['data']['method']
+
+        # check if RPC type is connector RPC (can be only 'get' or 'set')
+        try:
+            (connector_type, rpc_method_name) = rpc_method.split('_')
+            if connector_type == self._connector_type:
+                rpc_method = rpc_method_name
+        except ValueError:
+            pass
+
+        if content.get('device'):
+            # check if RPC method is reserved get/set
+            if rpc_method == 'get' or rpc_method == 'set':
+                params = {}
+                for param in content['data']['params'].split(';'):
+                    try:
+                        (key, value) = param.split('=')
+                    except ValueError:
+                        continue
+
+                    if key and value:
+                        params[key] = value
+
+                return self.__process_rpc_request(content, params)
+            else:
+                # Check whether one of my RPC handlers can handle this request
+                for rpc_config in self.__server_side_rpc:
+                    if search(rpc_config["deviceNameFilter"], content["device"]) \
+                            and search(rpc_config["methodFilter"], rpc_method) is not None:
+
+                        return self.__process_rpc_request(content, rpc_config)
+
+                self.__log.error("RPC not handled: %s", content)
+        else:
+            return self.__process_rpc_request(content, content['data']['params'])
 
     @CustomCollectStatistics(start_stat_type='allBytesSentToDevices')
     def _publish(self, request_topic, data_to_send, retain):
-        result = False
-        try:
-            if self._connected and self._client.is_connected():
-                self._client.publish(request_topic, data_to_send, retain).wait_for_publish()
-                result = True
-        except Exception as e:
-            self.__log.error("Error during publishing to target broker: %r", e)
-        return result
+        self._client.publish(request_topic, data_to_send, retain).wait_for_publish()
 
     def rpc_cancel_processing(self, topic):
         self.__log.info("RPC canceled or terminated. Unsubscribing from %s", topic)
@@ -1007,8 +982,8 @@ class MqttConnector(Connector, Thread):
                 self._send_current_converter_config(self.name + ':' + converter_name, config)
                 self.__log.info('Updated converter configuration for: %s with configuration %s',
                                 converter_name, converter_obj.config)
-                mapping_key = 'mapping' if self.config.get('mapping') else 'dataMapping'
-                for device_config in self.config[mapping_key]:
+
+                for device_config in self.config['dataMapping']:
                     try:
                         if device_config['converter']['deviceInfo']['deviceNameExpression'] == config[
                                 'deviceNameExpression']:
@@ -1025,13 +1000,13 @@ class MqttConnector(Connector, Thread):
     def _init_send_current_converter_config(self):
         for converter_obj in self.get_converters():
             try:
-                self.__gateway.send_attributes(
+                self.__gateway.tb_client.client.send_attributes(
                     {self.name + ':' + converter_obj.__class__.__name__: converter_obj.config})
             except AttributeError:
                 continue
 
     def _send_current_converter_config(self, name, config):
-        self.__gateway.send_attributes({name: config})
+        self.__gateway.tb_client.client.send_attributes({name: config})
 
     class ConverterWorker(Thread):
         def __init__(self, name, incoming_queue, send_result):
@@ -1045,17 +1020,16 @@ class MqttConnector(Connector, Thread):
 
         def run(self):
             while not self.stopped:
-                try:
+                if not self.__msg_queue.empty():
                     self.in_progress = True
                     convert_function, config, incoming_data = self.__msg_queue.get(True, 100)
-                    converted_data: ConvertedData = convert_function(config, incoming_data)
-                    if converted_data and (converted_data.telemetry_datapoints_count > 0 or
-                                           converted_data.attributes_datapoints_count > 0):
+                    converted_data = convert_function(config, incoming_data)
+                    if converted_data and (converted_data.get(ATTRIBUTES_PARAMETER) or
+                                           converted_data.get(TELEMETRY_PARAMETER)):
                         self.__send_result(config, converted_data)
                     self.in_progress = False
-                except (TimeoutError, Empty):
-                    self.in_progress = False
-                    sleep(0.1)
+                else:
+                    sleep(.2)
 
         def stop(self):
             self.stopped = True

@@ -1,50 +1,39 @@
 {
-  "application": {
+  "general": {
     "objectName": "TB_gateway",
-    "address": "0.0.0.0",
+    "address": "0.0.0.0:47808",
     "objectIdentifier": 599,
     "maxApduLengthAccepted": 1476,
     "segmentationSupported": "segmentedBoth",
-    "vendorIdentifier": 15,
-    "deviceDiscoveryTimeoutInSec": 5
+    "vendorIdentifier": 15
   },
   "devices": [
     {
-      "deviceInfo": {
-        "deviceNameExpressionSource": "expression",
-        "deviceNameExpression": "BACnet Device ${objectName}",
-        "deviceProfileExpressionSource": "constant",
-        "deviceProfileExpression": "default"
-      },
-      "address": "192.168.1.160:49644",
+      "deviceName": "BACnet Device ${objectName}",
+      "deviceType": "default",
+      "address": "192.168.2.110:47808",
       "pollPeriod": 10000,
       "attributes": [
         {
           "key": "temperature",
-          "objectType": "analogInput",
-          "objectId": "0",
+          "type": "string",
+          "objectId": "analogOutput:1",
           "propertyId": "presentValue"
         }
       ],
       "timeseries": [
         {
-          "key": "water_temp",
-          "objectType": "analogInput",
-          "objectId": "1",
-          "propertyId": "presentValue"
-        },
-        {
-          "key": "temp_outdoor",
-          "objectType": "analogInput",
-          "objectId": "2",
+          "key": "state",
+          "type": "bool",
+          "objectId": "binaryValue:1",
           "propertyId": "presentValue"
         }
       ],
       "attributeUpdates": [
         {
           "key": "brightness",
-          "objectType": "analogInput",
-          "objectId": "1",
+          "requestType": "writeProperty",
+          "objectId": "analogOutput:1",
           "propertyId": "presentValue"
         }
       ],
@@ -53,16 +42,14 @@
           "method": "set_state",
           "requestType": "writeProperty",
           "requestTimeout": 10000,
-          "objectType": "binaryOutput",
-          "objectId": "1",
+          "objectId": "binaryOutput:1",
           "propertyId": "presentValue"
         },
         {
           "method": "get_state",
           "requestType": "readProperty",
           "requestTimeout": 10000,
-          "objectType": "analogInput",
-          "objectId": "0",
+          "objectId": "binaryOutput:1",
           "propertyId": "presentValue"
         }
       ]

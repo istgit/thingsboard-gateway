@@ -6,7 +6,6 @@ from tb_rest_client.rest import ApiException
 from tb_rest_client.rest_client_ce import *
 
 LOG = logging.getLogger("TEST")
-LOG.trace = LOG.debug
 
 
 class GatewayDeviceUtil:
@@ -110,8 +109,6 @@ class GatewayDeviceUtil:
         Returns:
             bool: True if the gateway is connected, False otherwise.
         """
-        if time() - start_time > 600:
-            raise TimeoutError("Gateway connection timeout")
         with RestClientCE(base_url=GatewayDeviceUtil.DEFAULT_URL) as rest_client:
             try:
                 rest_client.login(username=GatewayDeviceUtil.DEFAULT_USERNAME,

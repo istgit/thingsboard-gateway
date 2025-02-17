@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -13,13 +13,10 @@
 #     limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Union
-
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
 
 
 class Converter(ABC):
 
     @abstractmethod
-    def convert(self, config, data) -> Union[dict, ConvertedData]:
+    def convert(self, config, data):
         pass

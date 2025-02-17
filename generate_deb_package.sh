@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-CURRENT_VERSION=$( grep -Po 'VERSION[ ,]=[ ,]\"\K(([0-9])+(\.){0,1})+' thingsboard_gateway/version.py )
+CURRENT_VERSION=$( grep -Po 'VERSION[ ,]=[ ,]\"\K(([0-9])+(\.){0,1})+' version.py )
 if [ "$1" = "clean" ] || [ "$1" = "only_clean" ] ; then
   sudo rm -rf /var/log/thingsboard-gateway/
-  sudo rm -rf /var/lib/thingsboard_gateway/
   sudo rm -rf deb_dist/
   sudo rm -rf dist/
   sudo rm -rf thingsboard-gateway.egg-info/
@@ -27,64 +26,25 @@ fi
 sudo rm -rf thingsboard_gateway/logs/*
 
 if [ "$1" != "only_clean" ] ; then
-
-CURRENT_USER=$USER
-export PYTHONDONTWRITEBYTECODE=1
-
-if [ "$1" != "only_clean" ] ; then
+  echo "Installing libraries for building deb package."
+  sudo apt-get install python3-stdeb python3-setuptools fakeroot python3-all dh-python zstd -y
   echo "Building DEB package"
-
-  # Ensure the 'build' module is installed
-  pip install build
-
-  # Create sources for DEB package
-  python3 -m build --no-isolation --wheel --outdir .
-
-  WHEEL_FILE=$(ls | grep thingsboard_gateway-*.whl)
-  echo $WHEEL_FILE
-  # Ensure the thingsboard-gateway.whl exists
-  if [ ! -f $WHEEL_FILE ]; then
-    echo "Error: $WHEEL_FILE not found."
-    exit 1
-  fi
-
-  # Create required directories
-  mkdir -p deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
-  mkdir -p for_build/var/lib
-
-  mkdir -p deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN
-
-cat <<EOT > deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/control
-Package: python3-thingsboard-gateway
-Version: $CURRENT_VERSION
-Section: python
-Priority: optional
-Architecture: all
-Essential: no
-Installed-Size: $(du -ks for_build/var/lib | cut -f1)
-Maintainer: ThingsBoard <info@thingsboard.io>
-Description: ThingsBoard IoT Gateway
- The ThingsBoard Gateway service for handling MQTT, Modbus, OPC-UA, and other connectors.
-Depends: python3, python3-venv
-EOT
-
-  # Adding the files, scripts, and permissions
-  mkdir -p for_build/var/lib/thingsboard_gateway
-  cp -r $WHEEL_FILE for_build/var/lib/thingsboard_gateway/$WHEEL_FILE
-  cp -r for_build/etc deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
-  cp -r for_build/var deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
-  cp -r -a for_build/DEBIAN deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
-
-  # Set correct ownership and permissions
+  echo "Creating sources for DEB package..."
+  python3 setup.py --command-packages=stdeb.command bdist_deb
+  echo "Adding the files, scripts and permissions to the package"
+  sudo cp -r thingsboard_gateway/extensions for_build/etc/thingsboard-gateway/
+  sudo cp -r thingsboard_gateway/config for_build/etc/thingsboard-gateway/
+  sudo cp -r for_build/etc deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
+  sudo cp -r for_build/var deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
+  sudo cp -r -a for_build/DEBIAN deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway
   sudo chown root:root deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/ -R
   sudo chown root:root deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/var/ -R
   sudo chmod 775 deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/preinst
   sudo chmod +x deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/postinst
   sudo chown root:root deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/preinst
-
-  # Building Deb package
+  sudo sh -c "sed -i '/^Depends: .*/ s/$/, libffi-dev, libglib2.0-dev, libxml2-dev, libxslt-dev, libssl-dev, zlib1g-dev/' deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/control >> deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/DEBIAN/control"
+  # Bulding Deb package
   dpkg-deb -b deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway/
-
   mkdir deb-temp
   cd deb-temp
   ar x ../deb_dist/thingsboard-gateway-$CURRENT_VERSION/debian/python3-thingsboard-gateway.deb
@@ -94,5 +54,4 @@ EOT
   ar r ../python3-thingsboard-gateway.deb debian-binary control.tar.xz data.tar.xz
   cd ..
   rm -r deb-temp
-fi
 fi

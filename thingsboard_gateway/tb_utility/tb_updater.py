@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from logging import getLogger, setLoggerClass
+from logging import getLogger
 from platform import platform, release, system
-from time import time
+from threading import Thread
+from time import sleep, time
 from uuid import uuid1
 
 from importlib.metadata import PackageNotFoundError
@@ -23,16 +24,14 @@ from requests import ConnectionError, post
 from simplejson import loads
 
 from thingsboard_gateway import version
-from thingsboard_gateway.tb_utility.tb_logger import TbLogger
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 
-setLoggerClass(TbLogger)
 log = getLogger("service")
 
 UPDATE_SERVICE_BASE_URL = "https://updates.thingsboard.io"
 
 
-class TBUpdater:
+class TBUpdater(Thread):
     def __init__(self):
         super().__init__()
 
@@ -50,15 +49,21 @@ class TBUpdater:
         self.__check_period = 3600.0
         self.__request_timeout = 5
         self.__stopped = True
-        self.check_for_new_version()
+        self.start()
+
+    def run(self):
+        self.__stopped = False
+        while not self.__stopped:
+            if time() >= self.__previous_check + self.__check_period:
+                self.check_for_new_version()
+                self.__previous_check = time()
+            else:
+                sleep(1)
 
     def stop(self):
         self.__stopped = True
 
     def get_version(self):
-        if time() >= self.__previous_check + self.__check_period:
-            self.check_for_new_version()
-            self.__previous_check = time()
         return self.__version
 
     def get_platform(self):
@@ -82,9 +87,9 @@ class TBUpdater:
                     log.info("\n\n[===UPDATE===]\n\n New version %s is available! \n\n[===UPDATE===]\n",
                              self.__version["latest_version"])
         except ConnectionRefusedError:
-            log.warning("Cannot connect to the update service. Please check your internet connection.")
+            log.warning("Cannot connect to the update service. PLease check your internet connection.")
         except ConnectionError:
-            log.warning("Cannot connect to the update service. Please check your internet connection.")
+            log.warning("Cannot connect to the update service. PLease check your internet connection.")
         except Exception as e:
             log.exception(e)
 

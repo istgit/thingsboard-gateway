@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -12,130 +12,96 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from datetime import timezone
 from time import time
-
-from asyncua.ua.uatypes import VariantType
+from datetime import timezone
 
 from thingsboard_gateway.connectors.opcua.opcua_converter import OpcUaConverter
-from thingsboard_gateway.gateway.constants import TELEMETRY_PARAMETER, ATTRIBUTES_PARAMETER, REPORT_STRATEGY_PARAMETER
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.entities.report_strategy_config import ReportStrategyConfig
-from thingsboard_gateway.gateway.entities.telemetry_entry import TelemetryEntry
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
-from thingsboard_gateway.tb_utility.tb_utility import TBUtility
+from asyncua.ua.uatypes import LocalizedText, VariantType
 
 DATA_TYPES = {
-    'attributes': ATTRIBUTES_PARAMETER,
-    'timeseries': TELEMETRY_PARAMETER
+    'attributes': 'attributes',
+    'timeseries': 'telemetry'
 }
-
-VARIANT_TYPE_HANDLERS = {
-    VariantType.ExtensionObject: lambda data: str(data),
-    VariantType.DateTime: lambda data: data.replace(
-        tzinfo=timezone.utc).isoformat() if data.tzinfo is None else data.isoformat(),
-    VariantType.StatusCode: lambda data: data.name,
-    VariantType.QualifiedName: lambda data: data.to_string(),
-    VariantType.NodeId: lambda data: data.to_string(),
-    VariantType.ExpandedNodeId: lambda data: data.to_string(),
-    VariantType.ByteString: lambda data: data.hex(),
-    VariantType.XmlElement: lambda data: data.decode('utf-8'),
-    VariantType.Guid: lambda data: str(data),
-    VariantType.DiagnosticInfo: lambda data: data.to_string(),
-    VariantType.Null: lambda data: None
-}
-
-ERROR_MSG_TEMPLATE = "Bad status code: {} for node: {} with description {}"
 
 
 class OpcUaUplinkConverter(OpcUaConverter):
     def __init__(self, config, logger):
         self._log = logger
         self.__config = config
+        self.data = {
+            'deviceName': self.__config['device_name'],
+            'deviceType': self.__config['device_type'],
+            'attributes': [],
+            'telemetry': [],
+        }
+        self._last_node_timestamp = 0
 
-    def process_datapoint(self, config, val, basic_timestamp, device_report_strategy):
-        try:
-            error = None
+    def clear_data(self):
+        self.data = {
+            'deviceName': self.__config['device_name'],
+            'deviceType': self.__config['device_type'],
+            'attributes': [],
+            'telemetry': [],
+        }
+
+    def get_data(self):
+        if len(self.data['attributes']) or len(self.data['telemetry']):
+            data_list = []
+            device_names = self.__config.get('device_names')
+            if device_names:
+                for device in device_names:
+                    self.data['deviceName'] = device
+                    data_list.append(self.data)
+
+                return data_list
+
+            return [self.data]
+
+        return None
+
+    def convert(self, configs, values):
+        if not isinstance(configs, list):
+            configs = [configs]
+        if not isinstance(values, list):
+            values = [values]
+        for (val, config) in zip(values, configs):
+            if not val or val is None:
+                continue
+
             data = val.Value.Value
+
             if isinstance(data, list):
                 data = [str(item) for item in data]
-            else:
-                handler = VARIANT_TYPE_HANDLERS.get(val.Value.VariantType, lambda d: d if not hasattr(d, 'to_string') else d.to_string())
-                data = handler(data)
+            elif data is not None and not isinstance(data, (int, float, str, bool, dict, type(None))):
+                if isinstance(data, LocalizedText):
+                    data = data.Text
+                elif val.Value.VariantType == VariantType.ExtensionObject:
+                    data = str(data)
+                elif val.Value.VariantType == VariantType.DateTime:
+                    if data.tzinfo is None:
+                        data = data.replace(tzinfo=timezone.utc)
+                    data = data.isoformat()
+                elif val.Value.VariantType == VariantType.StatusCode:
+                    data = data.name
+                elif (val.Value.VariantType == VariantType.QualifiedName
+                      or val.Value.VariantType == VariantType.NodeId
+                      or val.Value.VariantType == VariantType.ExpandedNodeId):
+                    data = data.to_string()
+                elif val.Value.VariantType == VariantType.ByteString:
+                    data = data.hex()
+                elif val.Value.VariantType == VariantType.XmlElement:
+                    data = data.decode('utf-8')
+                elif val.Value.VariantType == VariantType.Guid:
+                    data = str(data)
+                elif val.Value.VariantType == VariantType.DiagnosticInfo:
+                    data = data.to_string()
+                elif val.Value.VariantType == VariantType.Null:
+                    data = None
+                else:
+                    self._log.warning(f"Unsupported data type: {val.Value.VariantType}, will be processed as a string.")
+                    if hasattr(data, 'to_string'):
+                        data = data.to_string()
+                    else:
+                        data = str(data)
 
-            if data is None and val.StatusCode.is_bad():
-                data = str.format(ERROR_MSG_TEMPLATE,val.StatusCode.name, val.data_type, val.StatusCode.doc)
-                error = True
-
-            timestamp_location = config.get('timestampLocation', 'gateway').lower()
-            timestamp = basic_timestamp  # Default timestamp
-            if timestamp_location == 'sourcetimestamp' and val.SourceTimestamp is not None:
-                timestamp = val.SourceTimestamp.timestamp() * 1000
-            elif timestamp_location == 'servertimestamp' and val.ServerTimestamp is not None:
-                timestamp = val.ServerTimestamp.timestamp() * 1000
-
-            section = DATA_TYPES[config['section']]
-            datapoint_key = TBUtility.convert_key_to_datapoint_key(config['key'], device_report_strategy, config, self._log)
-            if section == TELEMETRY_PARAMETER:
-                return TelemetryEntry({datapoint_key: data}, ts=timestamp), error
-            elif section == ATTRIBUTES_PARAMETER:
-                return {datapoint_key: data}, error
-        except Exception as e:
-            return None, str(e)
-
-    def convert(self, configs, values) -> ConvertedData:
-        StatisticsService.count_connector_message(self._log.name, 'convertersMsgProcessed')
-        basic_timestamp = int(time() * 1000)
-
-        try:
-            if not isinstance(configs, list):
-                configs = [configs]
-            if not isinstance(values, list):
-                values = [values]
-
-            converted_data = ConvertedData(device_name=self.__config['device_name'], device_type=self.__config['device_type'])
-
-            device_report_strategy = None
-            try:
-                device_report_strategy = ReportStrategyConfig(self.__config.get(REPORT_STRATEGY_PARAMETER))
-            except ValueError as e:
-                self._log.trace("Report strategy config is not specified for device %s: %s", self.__config['device_name'], e)
-
-            telemetry_batch = []
-            attributes_batch = []
-
-            for config, val in zip(configs, values):
-                result, error = self.process_datapoint(config, val, basic_timestamp, device_report_strategy)
-                if result is not None:
-                    if isinstance(result, TelemetryEntry):
-                        telemetry_batch.append(result)
-                    elif isinstance(result, dict):
-                        attributes_batch.append(result)
-
-            converted_data.add_to_telemetry(telemetry_batch)
-            for attr in attributes_batch:
-                converted_data.add_to_attributes(attr)
-
-            StatisticsService.count_connector_message(self._log.name, 'convertersAttrProduced', count=converted_data.attributes_datapoints_count)
-            StatisticsService.count_connector_message(self._log.name, 'convertersTsProduced', count=converted_data.telemetry_datapoints_count)
-
-            return converted_data
-        except Exception as e:
-            self._log.exception("Error occurred while converting data: ", exc_info=e)
-            StatisticsService.count_connector_message(self._log.name, 'convertersMsgDropped')
-
-    @staticmethod
-    def fill_telemetry(results):
-        telemetry_batch = []
-        for result, error in results:
-            if isinstance(result, TelemetryEntry):
-                telemetry_batch.append(result)
-        return telemetry_batch
-
-    @staticmethod
-    def fill_attributes(results):
-        attributes_batch = []
-        for result, error in results:
-            if isinstance(result, dict):
-                attributes_batch.append(result)
-        return attributes_batch
+            self.data[DATA_TYPES[config['section']]].append({config['key']: data})

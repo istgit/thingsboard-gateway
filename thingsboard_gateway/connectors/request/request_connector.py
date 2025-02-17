@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ from string import ascii_lowercase
 from threading import Thread
 from time import sleep, time
 
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
@@ -56,12 +54,7 @@ class RequestConnector(Connector, Thread):
         self.__gateway = gateway
         self.name = self.__config.get("name", "".join(choice(ascii_lowercase) for _ in range(5)))
         self._log = init_logger(self.__gateway, self.name, self.__config.get('logLevel', 'INFO'),
-                                enable_remote_logging=self.__config.get('enableRemoteLogging', False),
-                                is_connector_logger=True)
-        self._converter_log = init_logger(self.__gateway, self.name + '_converter',
-                                          self.__config.get('logLevel', 'INFO'),
-                                          enable_remote_logging=self.__config.get('enableRemoteLogging', False),
-                                          is_converter_logger=True, attr_name=self.name)
+                                enable_remote_logging=self.__config.get('enableRemoteLogging', False))
         self.__security = HTTPBasicAuth(self.__config["security"]["username"], self.__config["security"]["password"]) if \
             self.__config["security"]["type"] == "basic" else None
         self.__host = None
@@ -83,16 +76,14 @@ class RequestConnector(Connector, Thread):
 
     def run(self):
         while not self.__stopped:
-            request_sent = False
             if self.__requests_in_progress:
-                for req in self.__requests_in_progress:
-                    if time() >= req["next_time"]:
-                        thread = Thread(target=self.__send_request, args=(req, self.__convert_queue, self._log),
+                for request in self.__requests_in_progress:
+                    if time() >= request["next_time"]:
+                        thread = Thread(target=self.__send_request, args=(request, self.__convert_queue, self._log),
                                         daemon=True,
-                                        name="Request to endpoint \'%s\' Thread" % (req["config"].get("url")))
+                                        name="Request to endpoint \'%s\' Thread" % (request["config"].get("url")))
                         thread.start()
-                        request_sent = True
-            if not request_sent:
+            else:
                 sleep(.2)
             self.__process_data()
 
@@ -122,102 +113,53 @@ class RequestConnector(Connector, Thread):
 
     def server_side_rpc_handler(self, content):
         try:
-            # check if RPC method is reserved get/set
-            self.__check_and_process_reserved_rpc(content)
-
             for rpc_request in self.__rpc_requests:
                 if fullmatch(rpc_request["deviceNameFilter"], content["device"]) and fullmatch(
                         rpc_request["methodFilter"], content["data"]["method"]):
-                    self.__process_rpc(rpc_request, content)
+                    converted_data = rpc_request["converter"].convert(rpc_request, content)
+                    response_queue = Queue(1)
+                    request_dict = {"config": {**rpc_request,
+                                               **converted_data},
+                                    "request": request,
+                                    "withResponse": True}
+                    rpc_request_thread = Thread(target=self.__send_request,
+                                                args=(request_dict, response_queue, self._log),
+                                                daemon=True,
+                                                name="RPC request to %s" % (converted_data["url"]))
+                    rpc_request_thread.start()
+                    rpc_request_thread.join()
+                    if not response_queue.empty():
+                        response = response_queue.get_nowait()
+
+                        if rpc_request.get('responseValueExpression'):
+                            response_value_expression = rpc_request['responseValueExpression']
+                            values = TBUtility.get_values(response_value_expression, response.json(),
+                                                          expression_instead_none=True)
+                            values_tags = TBUtility.get_values(response_value_expression, response.json(), get_tag=True)
+                            full_value = response_value_expression
+                            for (value, value_tag) in zip(values, values_tags):
+                                is_valid_value = "${" in response_value_expression and "}" in \
+                                                 response_value_expression
+
+                                full_value = full_value.replace('${' + str(value_tag) + '}',
+                                                                str(value)) if is_valid_value else str(value)
+
+                            self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
+                                                          content=full_value)
+                            del response_queue
+                            return
+
+                        self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
+                                                      content=response.text)
+                        del response_queue
+                        return
+
+                    self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
+                                                  success_sent=True)
+
+                    del response_queue
         except Exception as e:
             self._log.exception(e)
-
-    def __process_rpc(self, rpc_request, content):
-        converted_data = rpc_request["converter"].convert(rpc_request, content)
-        response_queue = Queue(1)
-        request_dict = {"config": {**rpc_request,
-                                   **converted_data},
-                        "request": request,
-                        "withResponse": True}
-        rpc_request_thread = Thread(target=self.__send_request,
-                                    args=(request_dict, response_queue, self._log),
-                                    daemon=True,
-                                    name="RPC request to %s" % (converted_data["url"]))
-        rpc_request_thread.start()
-        rpc_request_thread.join()
-        if not response_queue.empty():
-            response = response_queue.get_nowait()
-
-            if rpc_request.get('responseValueExpression'):
-                response_value_expression = rpc_request['responseValueExpression']
-                values = TBUtility.get_values(response_value_expression, response.json(),
-                                              expression_instead_none=True)
-                values_tags = TBUtility.get_values(
-                    response_value_expression, response.json(), get_tag=True)
-                full_value = response_value_expression
-                for (value, value_tag) in zip(values, values_tags):
-                    is_valid_value = "${" in response_value_expression and "}" in \
-                        response_value_expression
-
-                    full_value = full_value.replace('${' + str(value_tag) + '}',
-                                                    str(value)) if is_valid_value else str(value)
-
-                self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
-                                              content={'result': full_value})
-                del response_queue
-                return
-
-            self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
-                                          content={'result': response.text})
-            del response_queue
-            return
-
-        self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"],
-                                      success_sent=True)
-
-        del response_queue
-
-    def __check_and_process_reserved_rpc(self, content):
-        rpc_method_name = content["data"]["method"]
-
-        if rpc_method_name == 'get' or rpc_method_name == 'set':
-            params = self.__parse_reserved_rpc_params(rpc_method_name, content["data"]["params"])
-
-            rpc_request = self.__format_rpc_reqeust(params)
-
-            rpc_request['converter'] = JsonRequestDownlinkConverter(rpc_request, self._converter_log)
-
-            self.__process_rpc(rpc_request, content)
-
-    def __parse_reserved_rpc_params(self, rpc_method_name, params):
-        result_params = {}
-        for param in params.split(';'):
-            try:
-                (key, value) = param.split('=')
-            except ValueError:
-                continue
-
-            if key and value:
-                result_params[key] = value
-
-        if rpc_method_name == 'set':
-            result_params['requestValueExpression'] = result_params.pop('value', None)
-
-        return result_params
-
-    def __format_rpc_reqeust(self, params):
-        return {
-            'requestUrlExpression': params['requestUrlExpression'],
-            'responseTimeout': params.get('responseTimeout', 1),
-            'httpMethod': params.get('httpMethod', 'GET'),
-            'requestValueExpression': params.get('requestValueExpression', '${params}'),
-            'responseValueExpression': params.get('responseValueExpression', None),
-            'timeout': params.get('timeout', 0.5),
-            'tries': params.get('tries', 3),
-            'httpHeaders': params.get('httpHeaders', {
-                'Content-Type': 'application/json'
-            }),
-        }
 
     def __fill_requests(self):
         self._log.debug(self.__config["mapping"])
@@ -229,7 +171,7 @@ class RequestConnector(Connector, Thread):
                     module = TBModuleLoader.import_module(self._connector_type, endpoint["converter"]["extension"])
                     if module is not None:
                         self._log.debug('Custom converter for url %s - found!', endpoint["url"])
-                        converter = module(endpoint, self._converter_log)
+                        converter = module(endpoint, self._log)
                     else:
                         self._log.error(
                             "\n\nCannot find extension module for %s url.\nPlease check your configuration.\n",
@@ -247,18 +189,18 @@ class RequestConnector(Connector, Thread):
         for attribute_request in self.__config.get("attributeUpdates", []):
             if attribute_request.get("converter") is not None:
                 converter = TBModuleLoader.import_module("request", attribute_request["converter"])(attribute_request,
-                                                                                                    self._converter_log)
+                                                                                                    self._log)
             else:
-                converter = JsonRequestDownlinkConverter(attribute_request, self._converter_log)
+                converter = JsonRequestDownlinkConverter(attribute_request, self._log)
             attribute_request_dict = {**attribute_request, "converter": converter}
             self.__attribute_updates.append(attribute_request_dict)
 
     def __fill_rpc_requests(self):
         for rpc_request in self.__config.get("serverSideRpc", []):
             if rpc_request.get("converter") is not None:
-                converter = TBModuleLoader.import_module("request", rpc_request["converter"])(rpc_request, self._converter_log)
+                converter = TBModuleLoader.import_module("request", rpc_request["converter"])(rpc_request, self._log)
             else:
-                converter = JsonRequestDownlinkConverter(rpc_request, self._converter_log)
+                converter = JsonRequestDownlinkConverter(rpc_request, self._log)
             rpc_request_dict = {**rpc_request, "converter": converter}
             self.__rpc_requests.append(rpc_request_dict)
 
@@ -322,9 +264,6 @@ class RequestConnector(Connector, Thread):
             url, converter, data = data
             data_to_send = {}
 
-            StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
-            StatisticsService.count_connector_bytes(self.name, data, stat_parameter_name='connectorBytesReceived')
-
             if isinstance(data, list):
                 for data_item in data:
                     self.__add_ts(data_item)
@@ -355,10 +294,9 @@ class RequestConnector(Connector, Thread):
     def __process_data(self):
         try:
             if not self.__convert_queue.empty():
-                data: ConvertedData = self.__convert_queue.get()
-                if data and (data.attributes_datapoints_count > 0 or data.telemetry_datapoints_count > 0):
-                    self.__gateway.send_to_storage(self.get_name(), self.get_id(), data)
-                    self.statistics["MessagesSent"] = self.statistics["MessagesSent"] + 1
+                data = self.__convert_queue.get()
+                self.__gateway.send_to_storage(self.get_name(), self.get_id(), data)
+                self.statistics["MessagesSent"] = self.statistics["MessagesSent"] + 1
 
         except Exception as e:
             self._log.exception(e)

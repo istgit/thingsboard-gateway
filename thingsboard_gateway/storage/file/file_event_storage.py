@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@ import os
 import time
 
 from simplejson import dump
-from logging import getLogger
 
-from thingsboard_gateway.storage.event_storage import EventStorage
+from thingsboard_gateway.storage.event_storage import EventStorage, log
 from thingsboard_gateway.storage.file.event_storage_files import EventStorageFiles
 from thingsboard_gateway.storage.file.event_storage_reader import EventStorageReader
 from thingsboard_gateway.storage.file.event_storage_writer import DataFileCountError, EventStorageWriter
@@ -26,15 +25,14 @@ from thingsboard_gateway.storage.file.file_event_storage_settings import FileEve
 
 
 class FileEventStorage(EventStorage):
-    def __init__(self, config, logger):
-        self.__log = logger
+    def __init__(self, config):
         self.settings = FileEventStorageSettings(config)
         self.init_data_folder_if_not_exist()
         self.event_storage_files = self.init_data_files()
         self.data_files = self.event_storage_files.get_data_files()
         self.state_file = self.event_storage_files.get_state_file()
-        self.__writer = EventStorageWriter(self.event_storage_files, self.settings, self.__log)
-        self.__reader = EventStorageReader(self.event_storage_files, self.settings, self.__log)
+        self.__writer = EventStorageWriter(self.event_storage_files, self.settings)
+        self.__reader = EventStorageReader(self.event_storage_files, self.settings)
         self.__stopped = False
 
     def put(self, event):
@@ -43,13 +41,13 @@ class FileEventStorage(EventStorage):
             try:
                 self.__writer.write(event)
             except DataFileCountError as e:
-                self.__log.error("Failed to write event to storage! Error: %s", e)
+                log.error(e)
             except Exception as e:
-                self.__log.exception("Failed to write event to storage! Error: %s", e)
+                log.exception(e)
             else:
                 success = True
         else:
-            self.__log.error("Storage is closed!")
+            log.error("Storage is closed!")
         return success
 
     def get_event_pack(self):
@@ -64,10 +62,10 @@ class FileEventStorage(EventStorage):
             try:
                 os.makedirs(path)
             except OSError as e:
-                self.__log.error('Failed to create data folder! Error: %s', e)
+                log.error('Failed to create data folder! Error: %s', e)
 
     def init_data_files(self):
-        data_files = {}
+        data_files = []
         state_file = None
         data_files_size = 0
         _dir = self.settings.get_data_folder_path()
@@ -75,12 +73,12 @@ class FileEventStorage(EventStorage):
         if os.path.isdir(_dir):
             for file in os.listdir(_dir):
                 if file.startswith('data_'):
-                    data_files[file] = False
+                    data_files.append(file)
                     data_files_size += os.path.getsize(_dir + file)
                 elif file.startswith('state_'):
                     state_file = file
             if data_files_size == 0:
-                data_files[self.create_new_datafile()] = False
+                data_files.append(self.create_new_datafile())
             if not state_file:
                 state_file = self.create_file('state_', 'file')
                 with open(self.settings.get_data_folder_path() + state_file, 'w') as state_file_obj:
@@ -98,15 +96,10 @@ class FileEventStorage(EventStorage):
             file.close()
             return prefix + filename + '.txt'
         except IOError as e:
-            self.__log.error("Failed to create a new file! Error: %s", e)
+            log.error("Failed to create a new file! Error: %s", e)
 
     def stop(self):
         self.__stopped = True
 
     def len(self):
         return len(self.__writer.files.data_files)
-
-    def update_logger(self):
-        self.__log = getLogger("storage")
-        self.__writer.update_logger(self.__log)
-        self.__reader.update_logger(self.__log)

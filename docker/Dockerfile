@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS build
+FROM --platform=$TARGETPLATFORM python:3.12-slim AS build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -29,6 +29,9 @@ RUN mkdir -p /default-config/config /default-config/extensions/ &&  \
             echo "Unsupported platform detected. Trying to use default value...";; \
         esac && \
     curl https://sh.rustup.rs -sSf | sh -s -- -y --default-host=$DEFAULT_HOST --profile minimal && \
+    apt-get remove --purge -y \
+            gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev pkg-config && \
+    apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
     echo '#!/bin/sh\n\
@@ -46,8 +49,6 @@ python /thingsboard_gateway/tb_gateway.py' > /start-gateway.sh && chmod +x /star
     python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
     python3 -m pip install --no-cache-dir cryptography && \
     python3 -m pip install --no-cache-dir -r requirements.txt && \
-    apt-get remove --purge -y gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev pkg-config && \
-    apt-get autoremove -y && \
     rustup self uninstall -y
 
 VOLUME ["${configs}", "${extensions}", "${logs}"]

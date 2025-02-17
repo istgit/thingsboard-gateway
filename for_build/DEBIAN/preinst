@@ -16,29 +16,6 @@
 set -e
 
 echo "Installing directory for configs..."
-
-# Check if the directory exists before creating it
-if [ ! -d "/etc/thingsboard-gateway" ]; then
-    sudo mkdir /etc/thingsboard-gateway
-    echo "Created /etc/thingsboard-gateway directory"
-else
-    echo "/etc/thingsboard-gateway directory already exists. Skipping creation."
-fi
-
-echo "Adding non-root user"
-# check if the user exists
-if id "thingsboard_gateway" >/dev/null 2>&1; then
-    echo "User 'thingsboard_gateway' already exists. Skipping user creation."
-else
-    sudo adduser --system --gecos "ThingsBoard-Gateway Service" --disabled-password --group --home /var/lib/thingsboard_gateway thingsboard_gateway
-    echo "Created user 'thingsboard_gateway'"
-fi
-
-
-# Check if the directory for extensions exists before creating it
-if [ ! -d "/var/lib/thingsboard_gateway/extensions" ]; then
-    sudo mkdir -p /var/lib/thingsboard_gateway/extensions
-    echo "Created /var/lib/thingsboard_gateway/extensions directory"
-else
-    echo "/var/lib/thingsboard_gateway/extensions directory already exists. Skipping creation."
-fi
+sudo mkdir /etc/thingsboard-gateway || echo
+sudo adduser --system --gecos "ThingsBoard-Gateway Service" --disabled-password --group --home /var/lib/thingsboard_gateway thingsboard_gateway || echo "User exists"
+sudo mkdir /var/lib/thingsboard_gateway/extensions || echo

@@ -8,7 +8,7 @@ class BaseUnitTest(BaseTest):
         pass
 
     def setUp(self):
-        super().setUp()
+        pass
 
     def tearDown(self):
-        super().tearDown()
+        pass

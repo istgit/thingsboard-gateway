@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 from urllib.parse import quote
 
 from thingsboard_gateway.connectors.request.request_converter import RequestConverter
-from thingsboard_gateway.gateway.statistics.decorators import CollectStatistics
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
+from thingsboard_gateway.gateway.statistics_service import StatisticsService
 
 
 class JsonRequestDownlinkConverter(RequestConverter):
@@ -24,8 +24,8 @@ class JsonRequestDownlinkConverter(RequestConverter):
         self.__log = logger
         self.__config = config
 
-    @CollectStatistics(start_stat_type='allReceivedBytesFromTB',
-                       end_stat_type='allBytesSentToDevices')
+    @StatisticsService.CollectStatistics(start_stat_type='allReceivedBytesFromTB',
+                                         end_stat_type='allBytesSentToDevices')
     def convert(self, config, data):
         try:
             if data["data"].get("id") is None:

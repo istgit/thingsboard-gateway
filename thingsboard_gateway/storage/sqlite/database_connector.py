@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -20,46 +20,37 @@ from typing import Optional
 from thingsboard_gateway.storage.sqlite.storage_settings import StorageSettings
 
 
+from logging import getLogger
+
+log = getLogger("storage")
+
+
 class DatabaseConnector:
-    def __init__(self, settings: StorageSettings, logger, stopped):
-        self.__log = logger
+    def __init__(self, settings: StorageSettings):
         self.data_file_path = settings.data_folder_path
         self.connection: Optional[Connection] = None
         self.lock = RLock()
-        self.stopped = stopped
 
     def connect(self):
         """
         Create database file in path from settings
         """
         try:
-            with self.lock:
-                self.connection = connect(self.data_file_path, check_same_thread=False)
+            self.connection = connect(self.data_file_path, check_same_thread=False)
         except Exception as e:
-            self.__log.exception("Failed to connect to database", exc_info=e)
+            log.exception(e)
 
     def commit(self):
         """
         Commit changes
         """
-        self.__log.debug("Committing changes to DB")
+        log.debug("Committing changes to DB")
+        try:
+            with self.lock:
+                self.connection.commit()
 
-        committed = False
-        while not committed and not self.stopped.is_set():
-            try:
-                self.__commit()
-                committed = True
-            except sqlite3.ProgrammingError as e:
-                self.__log.exception("Failed to commit changes to database", exc_info=e)
-                self.__log.info('Trying to reconnect to database')
-                self.connect()
-            except Exception as e:
-                self.__log.exception("Failed to commit changes to database", exc_info=e)
-        return committed
-
-    def __commit(self):
-        with self.lock:
-            self.connection.commit()
+        except Exception as e:
+            log.exception(e)
 
     def execute(self, *args):
         """
@@ -69,22 +60,22 @@ class DatabaseConnector:
         try:
             with self.lock:
                 return self.connection.execute(*args)
-        except sqlite3.ProgrammingError as e:
-            self.__log.debug("Failed to execute changes to database", exc_info=e)
+        except sqlite3.ProgrammingError:
+            pass
         except Exception as e:
-            self.__log.exception("Failed to execute changes to database", exc_info=e)
+            log.exception(e)
 
     def rollback(self):
         """
         Rollback changes after exception
         """
-        self.__log.debug("Rollback transaction")
+        log.debug("Rollback transaction")
         try:
             with self.lock:
                 self.connection.rollback()
 
         except Exception as e:
-            self.__log.exception(e)
+            log.exception(e)
 
     def close(self):
         """
@@ -95,14 +86,11 @@ class DatabaseConnector:
                 self.connection.close()
 
         except Exception as e:
-            self.__log.exception("Failed to close database", exc_info=e)
+            log.exception(e)
 
     def get_cursor(self):
         try:
             return self.connection.cursor()
 
         except Exception as e:
-            self.__log.exception("Failed to get cursor", exc_info=e)
-
-    def update_logger(self, logger):
-        self.__log = logger
+            log.exception(e)

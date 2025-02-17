@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import asyncio
 
 from bleak import BleakClient, BleakScanner
 
-from thingsboard_gateway.gateway.statistics.decorators import CollectStatistics
+from thingsboard_gateway.gateway.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.connectors.ble.error_handler import ErrorHandler
 
@@ -97,7 +97,6 @@ class Device(Thread):
                 'telemetry': [],
                 'attributes': []
             },
-            'reportStrategy': config.get('reportStrategy', None),
             'attributeUpdates': config.get('attributeUpdates', []),
             'serverSideRpc': config.get('serverSideRpc', [])
         }
@@ -214,7 +213,6 @@ class Device(Thread):
             data_for_converter = {
                 'deviceName': self.name,
                 'deviceType': self.device_type,
-                'reportStrategy': self.config.get('reportStrategy', None),
                 'converter': self.config['characteristic']['extension'],
                 'config': {
                     **self.config['characteristic']
@@ -346,7 +344,7 @@ class Device(Thread):
             self._log.exception('Can\'t write data to device: \n %s', e)
             return e
 
-    @CollectStatistics(start_stat_type='allBytesSentToDevices')
+    @StatisticsService.CollectStatistics(start_stat_type='allBytesSentToDevices')
     def write_char(self, char_id, data):
         task = self.loop.create_task(self.__write_char(char_id, data))
 

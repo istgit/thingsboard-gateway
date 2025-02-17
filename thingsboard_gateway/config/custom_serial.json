@@ -1,18 +1,15 @@
 {
   "name": "Custom serial connector",
-  "logLevel": "DEBUG",
-  "uplinkQueueSize": 100000,
   "devices": [
     {
-      "name": "SerialDevice1",
+      "name": "CustomSerialDevice1",
       "type": "default",
-      "port": "/dev/ttysUSB0",
+      "port": "/dev/ttyUSB0",
       "baudrate": 9600,
-      "converter": "SerialUplinkConverter",
-      "downlink_converter": "SerialDownlinkConverter",
+      "converter": "CustomSerialUplinkConverter",
       "telemetry": [
         {
-          "type": "float",
+          "type": "byte",
           "key": "humidity",
           "untilDelimiter": "\r"
         }
@@ -27,23 +24,8 @@
       ],
       "attributeUpdates": [
         {
-          "attributeOnPlatform": "attr1",
+          "attributeOnThingsBoard": "attr1",
           "stringToDevice": "value = ${attr1}\n"
-        }
-      ],
-      "serverSideRpc": [
-        {
-          "method": "setValue",
-          "type": "int",
-          "withResponse": true,
-          "responseType": "string",
-          "responseUntilDelimiter": "\r",
-          "responseTimeoutSec": 5
-        },
-        {
-          "method": "getValue",
-          "type": "string",
-          "withResponse": false
         }
       ]
     }

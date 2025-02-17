@@ -1,4 +1,4 @@
-#      Copyright 2025. ThingsBoard
+#      Copyright 2024. ThingsBoard
 #
 #      Licensed under the Apache License, Version 2.0 (the "License");
 #      you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 #      See the License for the specific language governing permissions and
 #      limitations under the License.
 
-from thingsboard_gateway.gateway.constants import *  # noqa
+from thingsboard_gateway.gateway.constants import *
 
 # Connector constants
 
@@ -33,16 +33,13 @@ LAST_CONNECTION_ATTEMPT_TIME_PARAMETER = "last_connection_attempt_time"
 # Configuration parameters
 
 RPC_SECTION = "rpc"
-IDENTITY_SECTION = "identity"
-SECURITY_SECTION = "security"
 
 BYTE_ORDER_PARAMETER = "byteOrder"
 WORD_ORDER_PARAMETER = "wordOrder"
+SEND_DATA_ONLY_ON_CHANGE_PARAMETER = "sendDataOnlyOnChange"
 CONNECT_ATTEMPT_COUNT_PARAMETER = "connectAttemptCount"
 CONNECT_ATTEMPT_TIME_MS_PARAMETER = "connectAttemptTimeMs"
 WAIT_AFTER_FAILED_ATTEMPTS_MS_PARAMETER = "waitAfterFailedAttemptsMs"
-
-DELAY_BETWEEN_REQUESTS_MS_PARAMETER = "delayBetweenRequestsMs"
 
 FUNCTION_CODE_PARAMETER = "functionCode"
 
@@ -61,8 +58,6 @@ BYTESIZE_PARAMETER = "bytesize"
 PARITY_PARAMETER = "parity"
 STRICT_PARAMETER = "strict"
 TYPE_PARAMETER = "type"
-REPACK_PARAMETER = "repack"
-SERIAL_CONNECTION_TYPE_PARAMETER = "serial"
 
 RETRIES_PARAMETER = "retries"
 RETRY_ON_EMPTY_PARAMETER = "retryOnEmpty"
@@ -70,32 +65,6 @@ RETRY_ON_INVALID_PARAMETER = "retryOnInvalid"
 
 PAYLOAD_PARAMETER = "payload"
 TAG_PARAMETER = "tag"
-
-COILS_INITIALIZER = "coils_initializer"
-HOLDING_REGISTERS = "holding_registers"
-INPUT_REGISTERS = "input_registers"
-DISCRETE_INPUTS = "discrete_inputs"
-
-FUNCTION_TYPE = {
-    COILS_INITIALIZER: 'co',
-    HOLDING_REGISTERS: 'hr',
-    INPUT_REGISTERS: 'ir',
-    DISCRETE_INPUTS: 'di'
-}
-
-FUNCTION_CODE_SLAVE_INITIALIZATION = {
-    HOLDING_REGISTERS: (6, 16),
-    COILS_INITIALIZER: (5, 15),
-    INPUT_REGISTERS: (6, 16),
-    DISCRETE_INPUTS: (5, 15)
-}
-
-FUNCTION_CODE_READ = {
-    HOLDING_REGISTERS: 3,
-    COILS_INITIALIZER: 1,
-    INPUT_REGISTERS: 4,
-    DISCRETE_INPUTS: 2
-}
 
 # Default values
 

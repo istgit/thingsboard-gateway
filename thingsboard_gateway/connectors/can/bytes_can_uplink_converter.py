@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License"];
 #     you may not use this file except in compliance with the License.
@@ -15,34 +15,20 @@
 import struct
 
 from thingsboard_gateway.connectors.can.can_converter import CanConverter
-from thingsboard_gateway.gateway.constants import REPORT_STRATEGY_PARAMETER
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.entities.report_strategy_config import ReportStrategyConfig
-from thingsboard_gateway.gateway.entities.telemetry_entry import TelemetryEntry
-from thingsboard_gateway.gateway.statistics.decorators import CollectStatistics
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
-from thingsboard_gateway.tb_utility.tb_utility import TBUtility
+from thingsboard_gateway.gateway.statistics_service import StatisticsService
 
 
 class BytesCanUplinkConverter(CanConverter):
     def __init__(self, logger):
         self._log = logger
 
-    @CollectStatistics(start_stat_type='receivedBytesFromDevices',
-                       end_stat_type='convertedBytesFromDevice')
+    @StatisticsService.CollectStatistics(start_stat_type='receivedBytesFromDevices',
+                                         end_stat_type='convertedBytesFromDevice')
     def convert(self, configs, can_data):
-        device_name = configs.get("deviceName")
-        device_type = configs.get("deviceType")
+        result = {"attributes": {},
+                  "telemetry": {}}
 
-        converted_data = ConvertedData(device_name=device_name, device_type=device_type)
-
-        device_report_strategy = None
-        try:
-            device_report_strategy = ReportStrategyConfig(configs.get(REPORT_STRATEGY_PARAMETER))
-        except ValueError as e:
-            self._log.trace("Report strategy config is not specified for device %s: %s", device_name, e)
-
-        for config in configs.get('configs', []):
+        for config in configs:
             try:
                 tb_key = config["key"]
                 tb_item = "telemetry" if config["is_ts"] else "attributes"
@@ -72,26 +58,13 @@ class BytesCanUplinkConverter(CanConverter):
                     continue
 
                 if config.get("expression", ""):
-                    value = eval(config["expression"],
+                    result[tb_item][tb_key] = eval(config["expression"],
                                                    {"__builtins__": {}} if config["strictEval"] else globals(),
                                                    {"value": value, "can_data": can_data})
-
-                datapoint_key = TBUtility.convert_key_to_datapoint_key(tb_key, device_report_strategy,
-                                                                       configs, self._log)
-                if tb_item == "attributes":
-                    converted_data.add_to_attributes(datapoint_key, value)
                 else:
-                    telemetry_entry = TelemetryEntry({datapoint_key: value})
-                    converted_data.add_to_telemetry(telemetry_entry)
+                    result[tb_item][tb_key] = value
             except Exception as e:
-                StatisticsService.count_connector_message(self._log.name, 'convertersMsgDropped')
                 self._log.error("Failed to convert CAN data to TB %s '%s': %s",
                                 "time series key" if config["is_ts"] else "attribute", tb_key, str(e))
                 continue
-
-        StatisticsService.count_connector_message(self._log.name, 'convertersAttrProduced',
-                                                  count=converted_data.attributes_datapoints_count)
-        StatisticsService.count_connector_message(self._log.name, 'convertersTsProduced',
-                                                  count=converted_data.telemetry_datapoints_count)
-
-        return converted_data
+        return result

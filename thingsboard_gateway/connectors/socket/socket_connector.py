@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -23,11 +23,8 @@ from time import sleep
 from simplejson import dumps
 
 from thingsboard_gateway.connectors.connector import Connector
-from thingsboard_gateway.connectors.socket.backward_compatibility_adapter import BackwardCompatibilityAdapter
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.statistics.decorators import CollectStatistics, CollectAllReceivedBytesStatistics
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
+from thingsboard_gateway.gateway.statistics_service import StatisticsService
 from thingsboard_gateway.connectors.socket.socket_decorators import CustomCollectStatistics
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
 
@@ -42,44 +39,27 @@ class SocketConnector(Connector, Thread):
     def __init__(self, gateway, config, connector_type):
         super().__init__()
         self.__config = config
-
-        is_using_old_config = BackwardCompatibilityAdapter.is_old_config(config)
-        if is_using_old_config:
-            self.__config = BackwardCompatibilityAdapter(config).convert()
-
         self.__id = self.__config.get('id')
         self._connector_type = connector_type
-        self.statistics = {'MessagesReceived': 0, 'MessagesSent': 0}
+        self.statistics = {'MessagesReceived': 0,
+                           'MessagesSent': 0}
         self.__gateway = gateway
         self.name = config.get("name", 'TCP Connector ' + ''.join(choice(ascii_lowercase) for _ in range(5)))
-        remote_logging = self.__config.get('enableRemoteLogging', False)
-        log_level = self.__config.get('logLevel', 'INFO')
-        self.__log = init_logger(self.__gateway, self.name, log_level,
-                                 enable_remote_logging=remote_logging,
-                                 is_connector_logger=True)
-        self.__converter_log = init_logger(self.__gateway, self.name, log_level,
-                                           enable_remote_logging=remote_logging,
-                                           is_converter_logger=True, attr_name=self.name)
-
-        if is_using_old_config:
-            self.__log.warning("Old Socket connector configuration format detected. Automatic conversion is applied.")
-
+        self.__log = init_logger(self.__gateway, self.name, self.__config.get('logLevel', 'INFO'),
+                                 enable_remote_logging=self.__config.get('enableRemoteLogging', False))
         self.daemon = True
         self.__stopped = False
         self._connected = False
         self.__bind = False
-
-        self.__socket_type = config.get('socket', {}).get('type', 'TCP').upper()
-        self.__socket_address = config.get('socket', {}).get('address', '127.0.0.1')
-        self.__socket_port = config.get('socket', {}).get('port', 50000)
-        self.__socket_buff_size = config.get('socket', {}).get('buffer_size', 1024)
-
+        self.__socket_type = config['type'].upper()
+        self.__socket_address = config['address']
+        self.__socket_port = config['port']
+        self.__socket_buff_size = config['bufferSize']
         self.__socket = socket.socket(socket.AF_INET, SOCKET_TYPE[self.__socket_type])
         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__converting_requests = Queue(-1)
 
-        self.__devices = {}
-        self.__device_converters = {}
+        self.__devices, self.__device_converters = self.__convert_devices_list()
         self.__connections = {}
 
     def __convert_devices_list(self):
@@ -103,20 +83,13 @@ class SocketConnector(Connector, Thread):
             module = self.__load_converter(device)
             converter = module(
                 {'deviceName': device['deviceName'],
-                 'deviceType': device.get('deviceType', 'default')}, self.__converter_log) if module else None
+                 'deviceType': device.get('deviceType', 'default')}, self.__log) if module else None
             converters_for_devices[address_key] = converter
 
             # validate attributeRequests requestExpression
             attr_requests = device.get('attributeRequests', [])
             device['attributeRequests'] = self.__validate_attr_requests(attr_requests)
             if len(device['attributeRequests']):
-                is_tb_client = False
-
-                while not is_tb_client and not self.__stopped:
-                    self.__log.info('Waiting for ThingsBoard client to be connected...')
-                    is_tb_client = self.__gateway.tb_client is not None and hasattr(self.__gateway.tb_client, 'client')
-                    sleep(1)
-
                 self.__attribute_type = {
                     'client': self.__gateway.tb_client.client.gw_request_client_attributes,
                     'shared': self.__gateway.tb_client.client.gw_request_shared_attributes
@@ -177,24 +150,19 @@ class SocketConnector(Connector, Thread):
         self.start()
 
     def run(self):
-        self.__devices, self.__device_converters = self.__convert_devices_list()
-
         self._connected = True
 
         converting_thread = Thread(target=self.__process_data, daemon=True, name='Converter Thread')
         converting_thread.start()
 
-        while not self.__bind and not self.__stopped:
+        while not self.__bind:
             try:
                 self.__socket.bind((self.__socket_address, self.__socket_port))
-            except OSError as e:
-                self.__log.error('Error binding socket: %s', e)
+            except OSError:
+                self.__log.error('Address already in use. Reconnecting...')
                 sleep(3)
             else:
                 self.__bind = True
-
-        if self.__stopped:
-             return
 
         if self.__socket_type == 'TCP':
             self.__socket.listen(5)
@@ -269,9 +237,6 @@ class SocketConnector(Connector, Thread):
                         if is_attribute_request:
                             continue
 
-                    StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
-                    StatisticsService.count_connector_bytes(self.name, data,
-                                                            stat_parameter_name='connectorBytesReceived')
                     converter = self.__device_converters.get(conf_device_address)
                     self.__convert_data(device, data, converter)
 
@@ -287,16 +252,13 @@ class SocketConnector(Connector, Thread):
             device_config = {
                 'encoding': device.get('encoding', 'utf-8').lower(),
                 'telemetry': device.get('telemetry', []),
-                'attributes': device.get('attributes', []),
-                'reportStrategy': device.get('reportStrategy')
+                'attributes': device.get('attributes', [])
             }
-            converted_data: ConvertedData = converter.convert(device_config, data)
+            converted_data = converter.convert(device_config, data)
 
             self.statistics['MessagesReceived'] = self.statistics['MessagesReceived'] + 1
 
-            if (converted_data and
-                    (converted_data.telemetry_datapoints_count > 0 or
-                     converted_data.attributes_datapoints_count > 0)):
+            if converted_data is not None:
                 self.__gateway.send_to_storage(self.get_name(), self.get_id(), converted_data)
                 self.statistics['MessagesSent'] = self.statistics['MessagesSent'] + 1
                 self.__log.info('Data to ThingsBoard %s', converted_data)
@@ -379,7 +341,7 @@ class SocketConnector(Connector, Thread):
     @CustomCollectStatistics(start_stat_type='allBytesSentToDevices')
     def __write_value_via_tcp(self, address, port, value):
         try:
-            self.__connections[(address, int(port))].sendall(bytes(value, encoding='utf-8'))
+            self.__connections[(address, int(port))].sendall(value)
             return 'ok'
         except KeyError:
             try:
@@ -393,13 +355,13 @@ class SocketConnector(Connector, Thread):
                 return e
 
     @staticmethod
-    @CollectStatistics(start_stat_type='allBytesSentToDevices')
+    @StatisticsService.CollectStatistics(start_stat_type='allBytesSentToDevices')
     def __write_value_via_udp(address, port, value):
         new_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         new_socket.sendto(value, (address, int(port)))
         new_socket.close()
 
-    @CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
+    @StatisticsService.CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
     def on_attributes_update(self, content):
         try:
             device = tuple(filter(lambda item: item['deviceName'] == content['device'], self.__config['devices']))[0]
@@ -414,7 +376,7 @@ class SocketConnector(Connector, Thread):
         except IndexError:
             self.__log.error('Device not found')
 
-    @CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
+    @StatisticsService.CollectAllReceivedBytesStatistics(start_stat_type='allReceivedBytesFromTB')
     def server_side_rpc_handler(self, content):
         try:
             if content.get('data') is None:
@@ -452,15 +414,13 @@ class SocketConnector(Connector, Thread):
                     else:
                         self.__write_value_via_udp(params['address'], int(params['port']), params['value'])
                 except KeyError:
-                    self.__gateway.send_rpc_reply(device=device['deviceName'], req_id=content['data'].get('id'),
-                                                  content={'result': 'Not enough params'})
+                    self.__gateway.send_rpc_reply(device=device, req_id=content['data'].get('id'),
+                                                  content='Not enough params')
                 except ValueError:
-                    self.__gateway.send_rpc_reply(device=device['deviceName'], req_id=content['data']['id'],
-                                                  content={'result': 'Param "port" have to be int type'})
+                    self.__gateway.send_rpc_reply(device=device, req_id=content['data']['id'],
+                                                  content='Param "port" have to be int type')
                 else:
-                    self.__gateway.send_rpc_reply(device=device['deviceName'],
-                                                  req_id=content['data'].get('id'),
-                                                  content={'result': str(result)})
+                    self.__gateway.send_rpc_reply(device=device, req_id=content['data'].get('id'), content=str(result))
             else:
                 for rpc_config in device['serverSideRpc']:
                     for (key, value) in content['data'].items():
@@ -480,7 +440,7 @@ class SocketConnector(Connector, Thread):
                                     self.__write_value_via_udp(address, port, converted_data)
 
                             if return_result and self.__socket_type == 'TCP':
-                                self.__gateway.send_rpc_reply(content['device'], content['data']['id'], {'result': str(result)})
+                                self.__gateway.send_rpc_reply(content['device'], content['data']['id'], str(result))
 
                             return
         except IndexError:

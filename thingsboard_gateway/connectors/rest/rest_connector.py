@@ -1,4 +1,4 @@
-#     Copyright 2025. ThingsBoard
+#     Copyright 2024. ThingsBoard
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import requests
 from requests.auth import HTTPBasicAuth as HTTPBasicAuthRequest
 from requests.exceptions import RequestException
 
-from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
-from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 from thingsboard_gateway.connectors.connector import Connector
@@ -71,12 +69,7 @@ class RESTConnector(Connector, Thread):
         self.name = config.get("name", 'REST Connector ' + ''.join(choice(ascii_lowercase) for _ in range(5)))
         self.__gateway = gateway
         self.__log = init_logger(self.__gateway, self.name, self.__config.get('logLevel', 'INFO'),
-                                 enable_remote_logging=self.__config.get('enableRemoteLogging', False),
-                                 is_connector_logger=True)
-        self.__converter_log = init_logger(self.__gateway, self.name + '_converter',
-                                           self.__config.get('logLevel', 'INFO'),
-                                           enable_remote_logging=self.__config.get('enableRemoteLogging', False),
-                                           is_connector_logger=True, attr_name=self.name)
+                                 enable_remote_logging=self.__config.get('enableRemoteLogging', False))
         self._default_downlink_converter = TBModuleLoader.import_module(self._connector_type,
                                                                         self._default_converters['downlink'])
         self._default_uplink_converter = TBModuleLoader.import_module(self._connector_type,
@@ -103,10 +96,6 @@ class RESTConnector(Connector, Thread):
 
         # configuring Attribute Request endpoints
         if len(self.__config.get('attributeRequests', [])):
-            while self.__gateway.tb_client is None and not hasattr(self.__gateway.tb_client, 'client'):
-                self.__log.info('Waiting for ThingsBoard client to be initialized...')
-                sleep(1)
-
             self.__attribute_type = {
                 'client': self.__gateway.tb_client.client.gw_request_client_attributes,
                 'shared': self.__gateway.tb_client.client.gw_request_shared_attributes
@@ -139,7 +128,7 @@ class RESTConnector(Connector, Thread):
                 for http_method in mapping['HTTPMethods']:
                     handler = data_handlers[security_type](self.collect_statistic_and_send, self.get_name(),
                                                            self.get_id(), self.endpoints[mapping["endpoint"]],
-                                                           self.__converter_log, provider=self.__event_provider)
+                                                           self.__log, provider=self.__event_provider)
                     handlers.append(web.route(http_method, mapping['endpoint'], handler))
             except Exception as e:
                 self.__log.error("Error on creating handlers - %s", str(e))
@@ -179,14 +168,8 @@ class RESTConnector(Connector, Thread):
         self.load_handlers()
         self._runner = web.AppRunner(self._app)
         await self._runner.setup()
-        if os.name == 'nt':
-            self.__log.info('REST connector started at %s',
-                            self.__config['host'] + ':' + str(self.__config.get('port', 5000)))
-            site = web.TCPSite(self._runner, host=self.__config['host'], port=int(self.__config.get('port', 5000)),
-                               ssl_context=ssl_context)
-        else:
-            site = web.TCPSite(self._runner, host=self.__config['host'], port=int(self.__config.get('port', 5000)),
-                               ssl_context=ssl_context, reuse_port=True, reuse_address=True)
+        site = web.TCPSite(self._runner, host=self.__config['host'], port=int(self.__config.get('port', 5000)),
+                           ssl_context=ssl_context, reuse_port=True, reuse_address=True)
         await site.start()
         self.__log.info('REST connector started at %s',
                         self.__config['host'] + ':' + str(self.__config.get('port', 5000)))
@@ -297,11 +280,9 @@ class RESTConnector(Connector, Thread):
                     if key and value:
                         params[key] = value
 
-                params['valueExpression'] = params.pop('value', None)
-
                 uplink_converter = self._default_uplink_converter
-                downlink_converter = self._default_downlink_converter(params, self.__log)
-                converted_data = downlink_converter.convert(config=params, data=content)
+                downlink_converter = self._default_downlink_converter
+                converted_data = downlink_converter.convert(params, content)
 
                 request_dict = {'config': {**params, **converted_data}, 'request': regular_request,
                                 'converter': uplink_converter}
@@ -310,12 +291,12 @@ class RESTConnector(Connector, Thread):
                 self.__log.debug('Response from RPC request: %s', response)
                 self.__gateway.send_rpc_reply(device=device,
                                               req_id=content["data"].get('id'),
-                                              content={'result': response[2]} if response and len(response) >= 3 else {'result': response})
+                                              content=response[2] if response and len(response) >= 3 else response)
             else:
                 for rpc_request in self.__rpc_requests:
                     if fullmatch(rpc_request["deviceNameFilter"], content["device"]) and \
                             fullmatch(rpc_request["methodFilter"], rpc_method):
-                        converted_data = rpc_request["downlink_converter"].convert(config=rpc_request, data=content)
+                        converted_data = rpc_request["downlink_converter"].convert(rpc_request, content)
 
                         request_dict = {"config": {**rpc_request,
                                                    **converted_data},
@@ -328,7 +309,7 @@ class RESTConnector(Connector, Thread):
                         if (content['data'].get('id') is not None) and (response is not None):
                             self.__gateway.send_rpc_reply(device=content["device"],
                                                           req_id=content["data"]["id"],
-                                                          content={'result': response[2]} if response and len(response) >= 3 else {'result': response})
+                                                          content=response[2] if response and len(response) >= 3 else response)
         except Exception as e:
             self.__log.exception(e)
 
@@ -385,7 +366,7 @@ class RESTConnector(Connector, Thread):
             logger.debug(url)
             security = None
 
-            if request_dict["config"].get('security', {}).get('type', 'anonymous').lower() == "basic":
+            if request_dict["config"]["security"]["type"].lower() == "basic":
                 security = HTTPBasicAuthRequest(request_dict["config"]["security"]["username"],
                                                 request_dict["config"]["security"]["password"])
 
@@ -588,18 +569,14 @@ class AnonymousDataHandler(BaseDataHandler):
 
         try:
             self.log.info("CONVERTER CONFIG: %r", endpoint_config['converter'])
-            converted_config = endpoint_config['converter']
-            converted_config.update({'reportStrategy': endpoint_config.get('reportStrategy')})
-            converter = self.endpoint['converter'](converted_config, self.log)
-            converted_data: ConvertedData = converter.convert(config=endpoint_config['converter'], data=data)
+            converter = self.endpoint['converter'](endpoint_config['converter'], self.log)
+            converted_data = converter.convert(config=endpoint_config['converter'], data=data)
 
             self.modify_data_for_remote_response(converted_data, self.response_expected)
 
-            if (converted_data and
-                    (converted_data.attributes_datapoints_count > 0 or
-                     converted_data.telemetry_datapoints_count > 0)):
-                self.send_to_storage(self.name, self.connector_id, converted_data)
-                self.log.info("CONVERTED_DATA: %r", converted_data)
+            self.send_to_storage(self.name, self.connector_id, converted_data)
+            self.log.info("CONVERTED_DATA: %r", converted_data)
+
             return self.get_response()
         except Exception as e:
             self.log.exception("Error while post to anonymous handler: %s", e)
@@ -640,24 +617,14 @@ class BasicDataHandler(BaseDataHandler):
                 return result
 
             try:
-                StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
-                StatisticsService.count_connector_bytes(self.name, data, stat_parameter_name='connectorBytesReceived')
-
                 self.log.info("CONVERTER CONFIG: %r", endpoint_config['converter'])
-
-                converter_config = endpoint_config['converter']
-                converter_config.update({'reportStrategy': endpoint_config.get('reportStrategy')})
-
-                converter = self.endpoint['converter'](converter_config, self.log)
-                converted_data: ConvertedData = converter.convert(config=endpoint_config['converter'], data=data)
+                converter = self.endpoint['converter'](endpoint_config['converter'], self.log)
+                converted_data = converter.convert(config=endpoint_config['converter'], data=data)
 
                 self.modify_data_for_remote_response(converted_data, self.response_expected)
 
-                if (converted_data and
-                        (converted_data.attributes_datapoints_count > 0 or
-                         converted_data.telemetry_datapoints_count > 0)):
-                    self.send_to_storage(self.name, self.connector_id, converted_data)
-                    self.log.info("CONVERTED_DATA: %r", converted_data)
+                self.send_to_storage(self.name, self.connector_id, converted_data)
+                self.log.info("CONVERTED_DATA: %r", converted_data)
 
                 return self.get_response()
             except Exception as e:
