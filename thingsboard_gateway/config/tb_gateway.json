@@ -1,6 +1,6 @@
 {
   "thingsboard": {
-    "host": "thingsboard.cloud",
+    "host": "localhost",
     "port": 1883,
     "remoteShell": false,
     "remoteConfiguration": true,
@@ -21,7 +21,7 @@
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "YOUR_ACCESS_TOKEN"
+      "accessToken": "YgS0PXBLFlaNeLwMH7RJ"
     },
     "qos": 1,
     "reportStrategy": {
@@ -61,5 +61,11 @@
     "minTimeBetweenPingsMs": 10000,
     "minPingIntervalWithoutDataMs": 5000
   },
-  "connectors": []
+  "connectors": [
+    {
+      "type": "dnp3",
+      "name": "DNP3 Connector",
+      "configuration": "dnp3_config.json"
+    }
+  ]
 }
