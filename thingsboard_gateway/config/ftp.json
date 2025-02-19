@@ -1,53 +1,40 @@
 {
-  "host": "0.0.0.0",
+  "host": "35.193.5.121",
   "port": 21,
   "TLSSupport": false,
   "security": {
     "type": "basic",
-    "username": "admin",
-    "password": "admin"
+    "username": "ftpuser",
+    "password": "istgmonitor1"
   },
   "paths": [
     {
-      "devicePatternName": "asd",
+      "devicePatternName": "ReconAreav2",
       "devicePatternType": "Device",
       "delimiter": ",",
-      "path": "fol/*_hello*.txt",
+      "path": "/home/ftpuser/ftp/files/recon_data.csv",
       "readMode": "FULL",
       "maxFileSize": 5,
       "pollPeriod": 500,
-      "txtFileDataView": "SLICED",
+      "txtFileDataView": "TABLE",
       "withSortingFiles": true,
+
       "attributes": [
         {
-          "key": "temp",
-          "value": "[1:]"
-        },
-        {
-          "key": "tmp",
-          "value": "[0:1]"
+          "type": "string",
+          "key": "Region",
+          "value": "MLMM"
         }
       ],
       "timeseries": [
         {
-          "type": "int",
-          "key": "[0:1]",
-          "value": "[0:1]"
-        },
-        {
-          "type": "int",
-          "key": "temp",
-          "value": "[1:]"
+
+          "type": "string",
+          "key": "${MeterNumber}",
+          "ts" : "${TranDateTime}",
+          "value": "${Units}"
         }
       ]
-    }
-  ],
-  "attributeUpdates": [
-    {
-      "path": "fol/hello.json",
-      "deviceNameFilter": ".*",
-      "writingMode": "WRITE",
-      "valueExpression": "{'${attributeKey}':'${attributeValue}'}"
     }
   ],
   "serverSideRpc": [
@@ -61,5 +48,6 @@
       "methodFilter": "write",
       "valueExpression": "${params}"
     }
-  ]
+  ],
+  "id": "efefc398-ee44-4899-8b54-628ccb06953e"
 }

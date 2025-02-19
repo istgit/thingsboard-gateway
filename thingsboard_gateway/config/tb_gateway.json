@@ -1,6 +1,6 @@
 {
   "thingsboard": {
-    "host": "thingsboard.cloud",
+    "host": "35.208.180.242",
     "port": 1883,
     "remoteShell": false,
     "remoteConfiguration": true,
@@ -21,7 +21,7 @@
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "YOUR_ACCESS_TOKEN"
+      "accessToken": "6L10ZdnLWT8u7ZRBoKwk"
     },
     "qos": 1,
     "reportStrategy": {
@@ -61,5 +61,11 @@
     "minTimeBetweenPingsMs": 10000,
     "minPingIntervalWithoutDataMs": 5000
   },
-  "connectors": []
+  "connectors": [
+        {
+      "type": "ftp",
+      "name": "FTP Connector",
+      "configuration": "ftp.json"
+    }
+  ]
 }
