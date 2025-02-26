@@ -73,6 +73,7 @@ class FTPUplinkConverter(FTPConverter):
                 ts = None
                 if data_type == 'timeseries':
                     ts = self._retrieve_ts_for_sliced_or_table(self.__config[data_type], arr, config['headers'])
+                    #print(ts)
                 for information in self.__config[data_type]:
                     try:
 
@@ -118,6 +119,8 @@ class FTPUplinkConverter(FTPConverter):
                                                   count=converted_data.attributes_datapoints_count)
         StatisticsService.count_connector_message(self._log.name, 'convertersTsProduced',
                                                   count=converted_data.telemetry_datapoints_count)
+
+        #print(converted_data)
         return converted_data
 
     @staticmethod
@@ -186,10 +189,14 @@ class FTPUplinkConverter(FTPConverter):
 
     def _retrieve_ts_for_sliced_or_table(self, config, data, headers=[]):
         for config_object in config:
-            if config_object.get('key') == 'ts':
-                value = config_object['value']
-                if '${' in config_object.get('value') and '}' in config_object.get('value') and headers:
-                    value = headers.index(re.sub(r'[^\w]', '', config_object['value']))
+            print(config_object)
+            if config_object.get('ts'):
+                value = config_object['ts']
+                print(value)
+                if '${' in config_object.get('ts') and '}' in config_object.get('ts') and headers:
+                    value = headers.index(re.sub(r'[^\w]', '', config_object['ts']))
+                    print(value)
+                    print(int(data[value]))
                     return int(data[value])
                 return self._get_key_or_value(value, data)
         return None

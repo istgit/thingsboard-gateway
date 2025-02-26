@@ -1326,40 +1326,22 @@ class TBGatewayService:
 
     @staticmethod
     def __convert_telemetry_to_ts(data):
+        telemetry = {}
         telemetry_with_ts = []
-        current_values = None
-        current_ts = None
-
-        for item in data['telemetry']:
-            print(item)
-
-            # Check for timestamp
-
-            if "ts" in item:
-                # If there is a current set of values, append them with the current timestamp
-                if current_values is not None:
-                    if isinstance(item["ts"], int):
-                        telemetry_with_ts.append({"ts": item["ts"], "values": current_values})
-                    else:
-                        telemetry_with_ts.append({"ts": int(time())*1000, "values": current_values})
-                    # Reset current values
-                    current_values = None
-                else:
-                    # If no current values is available, use the timestamp but do not append
-                    current_ts = item["ts"]
+        for item in data["telemetry"]:
+            if item.get("ts") is None:
+                telemetry.update(item)
             else:
-                # if item does not contain timestamp, it should contain values
-                current_values = item
-
-        # Handle the last values if they exist and have not been appended
-        if current_values is not None and current_ts is not None:
-            telemetry_with_ts.append({"ts": current_ts, "values": current_values})
+                if isinstance(item['ts'], int):
+                    telemetry_with_ts.append({"ts": item["ts"], "values": item["values"]})
+                else:
+                    log.warning('Data has invalid TS (timestamp) format! Using generated TS instead.')
+                    telemetry_with_ts.append({"ts": int(time() * 1000), "values": item["values"]})
 
         if telemetry_with_ts:
             data["telemetry"] = telemetry_with_ts
-        else:
-            data["telemetry"] = []
-
+        elif len(data['telemetry']) > 0:
+            data["telemetry"] = {"ts": int(time() * 1000), "values": telemetry}
         return data
 
     @CollectStorageEventsStatistics('storageMsgPushed')
