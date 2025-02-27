@@ -189,14 +189,10 @@ class FTPUplinkConverter(FTPConverter):
 
     def _retrieve_ts_for_sliced_or_table(self, config, data, headers=[]):
         for config_object in config:
-            print(config_object)
             if config_object.get('ts'):
                 value = config_object['ts']
-                print(value)
                 if '${' in config_object.get('ts') and '}' in config_object.get('ts') and headers:
                     value = headers.index(re.sub(r'[^\w]', '', config_object['ts']))
-                    print(value)
-                    print(int(data[value]))
                     return int(data[value])
                 return self._get_key_or_value(value, data)
         return None
