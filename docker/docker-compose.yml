@@ -2,7 +2,7 @@ version: '3.4'
 services:
   # ThingsBoard IoT Gateway Service Configuration
   tb-gateway:
-    image: thingsboard/tb-gateway
+    image: ecwin-ei-tb-gateway
     container_name: tb-gateway
     restart: always
 
