@@ -9,10 +9,10 @@
   },
   "paths": [
     {
-      "devicePatternName": "ReconAreav2",
-      "devicePatternType": "Device",
+      "devicePatternName": "${DeviceName}",
+      "devicePatternType": "ecwin-ei-monitor",
       "delimiter": ",",
-      "path": "/home/ftpuser/ftp/files/recon_data.csv",
+      "path": "/home/ftpuser/ftp/files/SBSA_Energy_Data_Availability_test.csv",
       "readMode": "FULL",
       "maxFileSize": 5,
       "pollPeriod": 500,
@@ -23,16 +23,37 @@
         {
           "type": "string",
           "key": "Region",
-          "value": "MLMM"
+          "value": "TestValue"
         }
       ],
       "timeseries": [
         {
 
           "type": "string",
-          "key": "${MeterNumber}",
-          "ts" : "${TranDateTime}",
-          "value": "${Units}"
+          "key": "1_Day_Expected",
+          "ts" : "${LastUpdate}",
+          "value": "${1_Day_Expected}"
+        },
+        {
+
+          "type": "string",
+          "key": "1_Day_Avail_%",
+          "ts" : "${LastUpdate}",
+          "value": "${1_Day_Avail_Percentage}"
+        },
+        {
+
+          "type": "string",
+          "key": "7_Day_Avail_%",
+          "ts" : "${LastUpdate}",
+          "value": "${7_Day_Avail_Percentage}"
+        },
+        {
+
+          "type": "string",
+          "key": "30_Day_Avail_%",
+          "ts" : "${LastUpdate}",
+          "value": "${30_Day_Avail_Percentage}"
         }
       ]
     }
