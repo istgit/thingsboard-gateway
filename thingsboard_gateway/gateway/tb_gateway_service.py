@@ -96,6 +96,7 @@ DEFAULT_CONNECTORS = {
     "xmpp": "XMPPConnector",
     "ocpp": "OcppConnector",
     "knx": "KNXConnector",
+    "dnp3": "DNP3Connector"
 }
 
 DEFAULT_STATISTIC = {

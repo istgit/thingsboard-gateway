@@ -64,7 +64,7 @@
   "connectors": [
     {
       "type": "dnp3",
-      "name": "DNP3 Connector",
+      "name": "dnp3 connector",
       "configuration": "dnp3_config.json"
     }
   ]
