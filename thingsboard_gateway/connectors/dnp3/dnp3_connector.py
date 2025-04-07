@@ -172,7 +172,7 @@ class DNP3Connector(Connector, Thread):
 
                     response = await self.__process_methods(method, device, datatype_config)
                     device_responses[datatype_config['key']] = response
-                    print(">>>>>:",device.name,response)
+                    # print(">>>>>:",device.name,response)
 
                     StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
                     StatisticsService.count_connector_bytes(self.name, response,
@@ -311,103 +311,13 @@ class RemoteTerminal_OLD():
             self._log.error("DNP3 connection initialisation failed - ip %s, id %s", self.master_ip, self.master_id )
             return
 
-class RemoteTerminal():
-    def __init__(self, gateway, device, master_id, master_ip,
-                 log_handler=asiodnp3.ConsoleLogger().Create(),
-                 listener=asiodnp3.PrintingChannelListener().Create(),
-                 soe_handler=asiodnp3.PrintingSOEHandler().Create(),
-                 master_application=asiodnp3.DefaultMasterApplication().Create(),
-                 stack_config=None):
-        self.name = device.get("deviceName")
-        self.datatypes = ('attributes', 'telemetry')
-        self.config = device
-
-        self.previous_poll_time = 0
-        self.polling_interval = device.get("polling_interval",10000)
-
-        self.master_ip = master_ip
-        self.master_id = master_id
-        self.port = device.get("port",20000)
-        self.remote_ip = device.get("outstation_ip")
-        self.remote_id = device.get("outstation_id")
-        self.timeout = device.get("timeout", 3)
-        self.max_retries = device.get("max_retries", 2)
-        self.retry_delay = device.get("retry_delay",1)
-        self.stale_if_longer_than: float = 2,  # in seconds
-
-        self._log = init_logger(gateway, "RTU Init", "DEBUG", enable_remote_logging=True)
-
-        self.uplink_converter = None
-        self.downlink_converter = None
-
-        self._log.debug('Creating a DNP3Manager.')
-        self.log_handler = log_handler
-        self.manager = asiodnp3.DNP3Manager(1, self.log_handler)
-
-        self._log.debug('Creating the DNP3 channel, a TCP client.')
-        self.retry = asiopal.ChannelRetry().Default()
-        self.listener = listener
-        self.channel = self.manager.AddTCPClient("tcpclient",
-                                                opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS,
-                                                self.retry,
-                                                self.master_ip,
-                                                self.remote_ip,
-                                                self.port,
-                                                self.listener)
-
-        self._log.debug('Configuring the DNP3 stack.')
-        self.stack_config = stack_config
-        if not self.stack_config:
-            self.stack_config = asiodnp3.MasterStackConfig()
-            self.stack_config.master.responseTimeout = openpal.TimeDuration().Seconds(self.timeout)
-            self.stack_config.link.RemoteAddr = self.remote_id
-
-        self._log.debug('Adding the master to the channel.')
-        self.soe_handler = soe_handler
-        self.master_application = master_application
-        self.master = self.channel.AddMaster("master",
-                                             asiodnp3.PrintingSOEHandler().Create(),
-                                             self.master_application,
-                                             self.stack_config)
-
-        self._log.debug('Configuring some scans (periodic reads).')
-        # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
-        self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
-                                                  openpal.TimeDuration().Minutes(30),
-                                                  opendnp3.TaskConfig().Default())
-        # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
-        self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
-                                                  openpal.TimeDuration().Minutes(1),
-                                                  opendnp3.TaskConfig().Default())
-
-        self.channel.SetLogFilters(openpal.LogFilters(opendnp3.levels.ALL_COMMS))
-        self.master.SetLogFilters(openpal.LogFilters(opendnp3.levels.ALL_COMMS))
-
-        self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
-        self.master.Enable()
-        sleep(5)
-
-class AppChannelListener(asiodnp3.IChannelListener):
-    """
-        Override IChannelListener in this manner to implement application-specific channel behavior.
-    """
-
-    def __init__(self):
-        super(AppChannelListener, self).__init__()
-
-    def OnStateChange(self, state):
-        print('In AppChannelListener.OnStateChange: state={}'.format(opendnp3.ChannelStateToString(state)))
-
-
-class SOEHandler(opendnp3.ISOEHandler):
-    """
-        Override ISOEHandler in this manner to implement application-specific sequence-of-events behavior.
-
+"""
+        Override ISOEHandler 
         This is an interface for SequenceOfEvents (SOE) callbacks from the Master stack to the application layer.
-    """
-
+"""
+class MySOEHandler(opendnp3.ISOEHandler):
     def __init__(self):
-        super(SOEHandler, self).__init__()
+        super(MySOEHandler, self).__init__()
 
     def Process(self, info, values):
         """
@@ -440,7 +350,103 @@ class SOEHandler(opendnp3.ISOEHandler):
         print('In SOEHandler.End')
 
 
-class MasterApplication(opendnp3.IMasterApplication):
+class RemoteTerminal():
+    def __init__(self, gateway, device, master_id, master_ip,
+                 log_handler=asiodnp3.ConsoleLogger().Create(),
+                 listener=asiodnp3.PrintingChannelListener().Create(),
+                 soe_handler=MySOEHandler(),
+                 master_application=asiodnp3.DefaultMasterApplication().Create(),
+                 stack_config=None):
+        self.gateway = gateway
+        self.config = device
+        self.master_log_level:int=15
+        self.master_ip = master_ip
+        self.master_id = master_id
+        self.name = self.config.get("deviceName")
+        self.port:int = self.config.get("port", 20000)
+        self.remote_ip = self.config.get("outstation_ip")
+        self.remote_id:int = self.config.get("outstation_id")
+        self.timeout:int = self.config.get("timeout", 3)
+        self.max_retries:int = self.config.get("max_retries", 2)
+        self.retry_delay:int = self.config.get("retry_delay",1)
+        self.stale_if_longer_than:float = 2  # in seconds
+        self.datatypes = ('attributes', 'telemetry')
+        self.previous_poll_time = 0
+        self.polling_interval:float = self.config.get("polling_interval",10000)
+
+        self.uplink_converter = None
+        self.downlink_converter = None
+
+        #self._log = init_logger(gateway, "RTU", "DEBUG", enable_remote_logging=True)
+        self._log = init_logger(gateway,
+                                name="RTU",
+                                level=self.config.get('logLevel', 'DEBUG'),
+                                enable_remote_logging=self.config.get('enableRemoteLogging', False),
+                                is_connector_logger=True)
+
+        self._log.debug('Creating a DNP3Manager.')
+        self.log_handler = log_handler
+        self.manager = asiodnp3.DNP3Manager(1, self.log_handler)
+
+        self._log.debug('Creating the DNP3 channel, a TCP client.')
+        self.channel_log_level:opendnp3.levels = opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS
+        self.channel_retry = asiopal.ChannelRetry().Default()
+        self.listener = listener
+        self.channel = self.manager.AddTCPClient(id="tcpclient",
+                                                levels=self.channel_log_level,
+                                                retry=self.channel_retry,
+                                                local=self.master_ip,
+                                                host=self.remote_ip,
+                                                port=self.port,
+                                                listener=self.listener)
+
+        self._log.debug('Configuring the DNP3 stack.')
+        self.stack_config = stack_config
+        if not self.stack_config:
+            self.stack_config = asiodnp3.MasterStackConfig()
+            self.stack_config.link.RemoteAddr = self.remote_id
+            self.stack_config.link.LocalAddr = self.master_id
+            self.stack_config.master.responseTimeout = openpal.TimeDuration().Seconds(self.timeout)
+
+        self._log.debug('Adding the master to the channel.')
+        self.soe_handler = soe_handler
+        self.master_application = master_application
+        self.master = self.channel.AddMaster(id="master",
+                                             SOEHandler=self.soe_handler,
+                                             application=self.master_application,
+                                             config=self.stack_config)
+
+        self._log.debug('Configuring some scans (periodic reads).')
+        # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
+        self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
+                                                  openpal.TimeDuration().Minutes(5),
+                                                  opendnp3.TaskConfig().Default())
+        # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
+        #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
+        #                                          openpal.TimeDuration().Minutes(1),
+        #                                          opendnp3.TaskConfig().Default())
+
+        self.channel.SetLogFilters(openpal.LogFilters(self.channel_log_level))
+        self.master.SetLogFilters(openpal.LogFilters(self.master_log_level))
+
+        self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
+        self.master.Enable()
+        sleep(5)
+
+class MyChannelListener(asiodnp3.IChannelListener):
+    """
+        Override IChannelListener in this manner to implement application-specific channel behavior.
+    """
+
+    def __init__(self):
+        super(AppChannelListener, self).__init__()
+
+    def OnStateChange(self, state):
+        print('In AppChannelListener.OnStateChange: state={}'.format(opendnp3.ChannelStateToString(state)))
+
+
+
+class MyMasterApplication(opendnp3.IMasterApplication):
     def __init__(self):
         super(MasterApplication, self).__init__()
 
