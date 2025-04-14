@@ -30,6 +30,8 @@ from dnp3_python.dnp3station.station_utils import collection_callback, command_c
 from dnp3_python.dnp3station.visitors import *
 from typing import Callable, Union, Dict, List, Optional, Tuple
 
+from pydnp3.opendnp3 import IMasterApplication
+
 # alias DbPointVal
 DbPointVal = Union[float, int, bool, None]
 DbStorage = Dict[opendnp3.GroupVariation, Dict[
@@ -77,6 +79,18 @@ class DNP3Connector(Connector, Thread):
         self.__devices = self.__config["devices"]
         self._master_id = self.__config.get("master_id", 2)
         self._master_ip = gethostbyname(self.__config["master_ip"])
+        #self.channel_log_level: opendnp3.levels = opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS
+        self.channel_log_level: opendnp3.levels = opendnp3.levels.NORMAL
+        self.channel_retry = asiopal.ChannelRetry().Default()
+        self.listener = asiodnp3.PrintingChannelListener().Create()
+
+        # Single DNP3Manager and SOEHandler
+        self._log.debug('Creating a DNP3Manager.')
+
+        self._manager = asiodnp3.DNP3Manager(1, asiodnp3.ConsoleLogger().Create())
+        self.channels = {} # Map outstation_id to master
+        self.masters = {} # Map outstation_id to channel
+        self._soe_handlers = {}  # NEW: Store SOE handlers per outstation_id
 
         self.statistics = {'MessagesReceived': 0,
                            'MessagesSent': 0}
@@ -87,6 +101,8 @@ class DNP3Connector(Connector, Thread):
         self.__methods = ["run", "g30v2","show"]
         self.__loop = asyncio.new_event_loop()
 
+
+
     def open(self):
         self.__stopped = False
         # self.__fill_converters()
@@ -94,12 +110,51 @@ class DNP3Connector(Connector, Thread):
 
     def run(self):
 
+        # Create a channel and master for each outstation
         """ set up and initialise the remote terminal objects"""
         for device in self.__devices:
-            newRTU = RemoteTerminal(self.__gateway, device, self._master_id, self._master_ip)
+            outstation_ip = device.get("outstation_ip")
+            print(outstation_ip)
+            outstation_id = device.get("outstation_id")
+            port = device.get("port", 20000)
+            print(self._master_ip)
+            # Create a channel
+            channel = self._manager.AddTCPClient(f"tcpclient_{outstation_id}",
+                                                 levels=self.channel_log_level,
+                                                 retry=self.channel_retry,
+                                                 local=self._master_ip,
+                                                 host=outstation_ip,
+                                                 port=port,
+                                                listener=self.listener)
+            self.channels[outstation_id] = channel
+
+            #Create a master for this channel
+            stack_config = asiodnp3.MasterStackConfig()
+            stack_config.link.LocalAddr = self._master_id
+            stack_config.link.RemoteAddr = outstation_id
+
+            self._soe_handlers[outstation_id] = OutstationSOEProxy(self._log, outstation_id)
+
+            master = channel.AddMaster(f"master_{outstation_id}",
+                                       self._soe_handlers[outstation_id],
+                                       asiodnp3.DefaultMasterApplication().Create(),
+                                       stack_config)
+            master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.ALL_CLASSES),
+                                openpal.TimeDuration().Seconds(30),
+                                opendnp3.TaskConfig().Default())
+
+            self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
+            master.Enable()
+            self.masters[outstation_id] = master
+
+
+        for device in self.__devices:
+            outstation_id = device.get("outstation_id")
+            newRTU = RemoteTerminal(self.__gateway, device, self.masters[outstation_id], self._soe_handlers[outstation_id])
             if newRTU is not False:
                 RTUs.append(newRTU)
 
+        print("This is the RTUs:", RTUs)
         """ set the converters for the RTUs"""
         self.__fill_converters()
 
@@ -195,6 +250,7 @@ class DNP3Connector(Connector, Thread):
         if method == "run":
             #response = device.master.send_scan_all_request()
             #response = device.master.get_db_by_group_variation(group=1, variation=2)
+            response = {k: v for k, v in self._soe_handlers[device.remote_id].data.items() if k[0] == device.remote_id}
             pass
         elif method == "g30v2":
             #response = device.get_db_by_group_variation(group=30, variation=2)
@@ -349,19 +405,51 @@ class MySOEHandler(opendnp3.ISOEHandler):
     def End(self):
         print('In SOEHandler.End')
 
+class OutstationSOEProxy(opendnp3.ISOEHandler):
+    def __init__(self, logger, outstation_id):
+        super().__init__()
+        self.data = {}
+        self.logger = logger
+        self.outstation_id = outstation_id
+        self.logger.setLevel(logging.DEBUG)
+
+    def Process(self, info, values):
+        visitor_class_types = {
+            opendnp3.ICollectionIndexedBinary: VisitorIndexedBinary,
+            opendnp3.ICollectionIndexedDoubleBitBinary: VisitorIndexedDoubleBitBinary,
+            opendnp3.ICollectionIndexedCounter: VisitorIndexedCounter,
+            opendnp3.ICollectionIndexedFrozenCounter: VisitorIndexedFrozenCounter,
+            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalog,
+            opendnp3.ICollectionIndexedBinaryOutputStatus: VisitorIndexedBinaryOutputStatus,
+            opendnp3.ICollectionIndexedAnalogOutputStatus: VisitorIndexedAnalogOutputStatus,
+            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval
+        }
+        visitor_class = visitor_class_types.get(type(values))
+        if visitor_class:
+            visitor = visitor_class()
+            values.Foreach(visitor)
+            for index, value in visitor.index_and_value:
+                key = (self.outstation_id, info.gv, index)
+                self.data[key] = value
+                self.logger.debug(
+                    f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Value {value}")
+
+    def Start(self):
+        print('In SOEHandler.Start')
+
+    def End(self):
+        print('In SOEHandler.End')
+
 
 class RemoteTerminal():
-    def __init__(self, gateway, device, master_id, master_ip,
-                 log_handler=asiodnp3.ConsoleLogger().Create(),
+    def __init__(self, gateway, device, master, soe_handler,
                  listener=asiodnp3.PrintingChannelListener().Create(),
-                 soe_handler=MySOEHandler(),
+                 # Add the outstation_id and base_handler
                  master_application=asiodnp3.DefaultMasterApplication().Create(),
                  stack_config=None):
         self.gateway = gateway
         self.config = device
         self.master_log_level:int=15
-        self.master_ip = master_ip
-        self.master_id = master_id
         self.name = self.config.get("deviceName")
         self.port:int = self.config.get("port", 20000)
         self.remote_ip = self.config.get("outstation_ip")
@@ -373,48 +461,14 @@ class RemoteTerminal():
         self.datatypes = ('attributes', 'telemetry')
         self.previous_poll_time = 0
         self.polling_interval:float = self.config.get("polling_interval",10000)
-
+        self._log = init_logger(gateway, f"RTU_{self.name}", "DEBUG", enable_remote_logging=True)
+        self.data = {}
+        self.master = master
+        self.soe_handler = soe_handler
         self.uplink_converter = None
         self.downlink_converter = None
 
-        #self._log = init_logger(gateway, "RTU", "DEBUG", enable_remote_logging=True)
-        self._log = init_logger(gateway,
-                                name="RTU",
-                                level=self.config.get('logLevel', 'DEBUG'),
-                                enable_remote_logging=self.config.get('enableRemoteLogging', False),
-                                is_connector_logger=True)
 
-        self._log.debug('Creating a DNP3Manager.')
-        self.log_handler = log_handler
-        self.manager = asiodnp3.DNP3Manager(1, self.log_handler)
-
-        self._log.debug('Creating the DNP3 channel, a TCP client.')
-        self.channel_log_level:opendnp3.levels = opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS
-        self.channel_retry = asiopal.ChannelRetry().Default()
-        self.listener = listener
-        self.channel = self.manager.AddTCPClient(id="tcpclient",
-                                                levels=self.channel_log_level,
-                                                retry=self.channel_retry,
-                                                local=self.master_ip,
-                                                host=self.remote_ip,
-                                                port=self.port,
-                                                listener=self.listener)
-
-        self._log.debug('Configuring the DNP3 stack.')
-        self.stack_config = stack_config
-        if not self.stack_config:
-            self.stack_config = asiodnp3.MasterStackConfig()
-            self.stack_config.link.RemoteAddr = self.remote_id
-            self.stack_config.link.LocalAddr = self.master_id
-            self.stack_config.master.responseTimeout = openpal.TimeDuration().Seconds(self.timeout)
-
-        self._log.debug('Adding the master to the channel.')
-        self.soe_handler = soe_handler
-        self.master_application = master_application
-        self.master = self.channel.AddMaster(id="master",
-                                             SOEHandler=self.soe_handler,
-                                             application=self.master_application,
-                                             config=self.stack_config)
 
         self._log.debug('Configuring some scans (periodic reads).')
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
@@ -426,12 +480,10 @@ class RemoteTerminal():
         #                                          openpal.TimeDuration().Minutes(1),
         #                                          opendnp3.TaskConfig().Default())
 
-        self.channel.SetLogFilters(openpal.LogFilters(self.channel_log_level))
-        self.master.SetLogFilters(openpal.LogFilters(self.master_log_level))
+        def __repr__(self):
+            return f"RemoteTerminal(name={self.name}. outstation_id={self.remote_id})"
 
-        self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
-        self.master.Enable()
-        sleep(5)
+        print(f"Outstation id ==== {self.remote_id}")
 
 class MyChannelListener(asiodnp3.IChannelListener):
     """
@@ -444,11 +496,9 @@ class MyChannelListener(asiodnp3.IChannelListener):
     def OnStateChange(self, state):
         print('In AppChannelListener.OnStateChange: state={}'.format(opendnp3.ChannelStateToString(state)))
 
-
-
 class MyMasterApplication(opendnp3.IMasterApplication):
     def __init__(self):
-        super(MasterApplication, self).__init__()
+        super(MyMasterApplication, self).__init__()
 
     # Overridden method
     def AssignClassDuringStartup(self):
@@ -475,7 +525,6 @@ class MyMasterApplication(opendnp3.IMasterApplication):
     def OnTaskStart(self, type, id):
         print('In MasterApplication.OnTaskStart')
 
-
 def collection_callback(result=None):
     """
     :type result: opendnp3.CommandPointResult
@@ -487,14 +536,12 @@ def collection_callback(result=None):
         opendnp3.CommandStatusToString(result.status)
     ))
 
-
 def command_callback(result=None):
     """
     :type result: opendnp3.ICommandTaskResult
     """
     print("Received command result with summary: {}".format(opendnp3.TaskCompletionToString(result.summary)))
     result.ForeachItem(collection_callback)
-
 
 def restart_callback(result=opendnp3.RestartOperationResult()):
     if result.summary == opendnp3.TaskCompletion.SUCCESS:
