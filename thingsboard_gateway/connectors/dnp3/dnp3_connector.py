@@ -32,6 +32,7 @@ from typing import Callable, Union, Dict, List, Optional, Tuple
 
 from pydnp3.opendnp3 import IMasterApplication
 
+
 # alias DbPointVal
 DbPointVal = Union[float, int, bool, None]
 DbStorage = Dict[opendnp3.GroupVariation, Dict[
@@ -47,6 +48,7 @@ from thingsboard_gateway.gateway.statistics.statistics_service import Statistics
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
+from thingsboard_gateway.gateway.tb_gateway_service import TBGatewayService
 
 # Try import library or install it and import
 installation_required = False
@@ -118,6 +120,18 @@ class DNP3Connector(Connector, Thread):
             outstation_id = device.get("outstation_id")
             port = device.get("port", 20000)
             print(self._master_ip)
+            device_name = device.get("deviceName")
+            self._log.debug(f"Configuring outstation {outstation_id}: IP {outstation_ip}, Port {port}")
+
+            # Create outstations as Thingsboards devices
+            attributes = {
+                "outstation_id": outstation_id,
+                "outstation_ip": outstation_ip,
+                "port" : port
+            }
+
+
+
             # Create a channel
             channel = self._manager.AddTCPClient(f"tcpclient_{outstation_id}",
                                                  levels=self.channel_log_level,
@@ -139,9 +153,6 @@ class DNP3Connector(Connector, Thread):
                                        self._soe_handlers[outstation_id],
                                        asiodnp3.DefaultMasterApplication().Create(),
                                        stack_config)
-            master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.ALL_CLASSES),
-                                openpal.TimeDuration().Seconds(30),
-                                opendnp3.TaskConfig().Default())
 
             self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
             master.Enable()
@@ -468,12 +479,12 @@ class RemoteTerminal():
         self.uplink_converter = None
         self.downlink_converter = None
 
-
+        polling_int = int(self.polling_interval)
 
         self._log.debug('Configuring some scans (periodic reads).')
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
         self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
-                                                  openpal.TimeDuration().Minutes(5),
+                                                  openpal.TimeDuration().Milliseconds(polling_int),
                                                   opendnp3.TaskConfig().Default())
         # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
         #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
