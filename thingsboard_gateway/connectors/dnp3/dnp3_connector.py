@@ -40,7 +40,7 @@ DbStorage = Dict[opendnp3.GroupVariation, Dict[
 
 #from dnp3_python.dnp3station.master_new import MyMasterNew
 
-from pkg_resources import non_empty_lines
+#from pkg_resources import non_empty_lines
 
 from thingsboard_gateway.connectors.connector import Connector
 from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
@@ -81,7 +81,7 @@ class DNP3Connector(Connector, Thread):
         self.__devices = self.__config["devices"]
         self._master_id = self.__config.get("master_id", 2)
         self._master_ip = gethostbyname(self.__config["master_ip"])
-        #self.channel_log_level: opendnp3.levels = opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS
+        self.channel_log_level: opendnp3.levels = opendnp3.levels.NORMAL | opendnp3.levels.ALL_COMMS
         self.channel_log_level: opendnp3.levels = opendnp3.levels.NORMAL
         self.channel_retry = asiopal.ChannelRetry().Default()
         self.listener = asiodnp3.PrintingChannelListener().Create()
@@ -92,7 +92,7 @@ class DNP3Connector(Connector, Thread):
         self._manager = asiodnp3.DNP3Manager(1, asiodnp3.ConsoleLogger().Create())
         self.channels = {} # Map outstation_id to master
         self.masters = {} # Map outstation_id to channel
-        self._soe_handlers = {}  # NEW: Store SOE handlers per outstation_id
+        self._soe_handlers = {}  # Store SOE handlers per outstation_id
 
         self.statistics = {'MessagesReceived': 0,
                            'MessagesSent': 0}
@@ -122,13 +122,6 @@ class DNP3Connector(Connector, Thread):
             print(self._master_ip)
             device_name = device.get("deviceName")
             self._log.debug(f"Configuring outstation {outstation_id}: IP {outstation_ip}, Port {port}")
-
-            # Create outstations as Thingsboards devices
-            attributes = {
-                "outstation_id": outstation_id,
-                "outstation_ip": outstation_ip,
-                "port" : port
-            }
 
 
 
@@ -336,85 +329,11 @@ class DNP3Connector(Connector, Thread):
             self.__gateway.send_rpc_reply(device=content["device"], req_id=content["data"]["id"], success_sent=False)
 
 
-class RemoteTerminal_OLD():
-    def __init__(self, gateway, device, master_id, master_ip):
-        self.name = device.get("deviceName")
-        self.datatypes = ('attributes', 'telemetry')
-        self.config = device
-
-        self.previous_poll_time = 0
-        self.polling_interval = device.get("polling_interval",10000)
-
-        self.master_ip = master_ip
-        self.master_id = master_id
-        self.remote_ip = device.get("outstation_ip")
-        self.remote_id = device.get("outstation_id")
-        self.timeout = device.get("timeout", 3)
-        self.max_retries = device.get("max_retries", 2)
-        self.retry_delay = device.get("retry_delay",1)
-
-        self._log = init_logger(gateway, "RTU Init", "INFO", enable_remote_logging=True)
-
-        self.uplink_converter = None
-        self.downlink_converter = None
-
-        """initialise device masters if not yet set up """
-        try:
-            self.master = MyMasterNew(
-                master_ip=self.master_ip,
-                outstation_ip=self.remote_ip,
-                port=device.get("port"),
-                master_id=self.master_id,
-                outstation_id=self.remote_id,
-                delay_polling_retry=self.retry_delay,
-                timeout = self.timeout,
-                num_polling_retry= self.max_retries
-            )
-            sleep(2)
-            device.master.start()
-            sleep(5)
-        except Exception as e:
-            self._log.exception(e)
-            self._log.error("DNP3 connection initialisation failed - ip %s, id %s", self.master_ip, self.master_id )
-            return
-
 """
         Override ISOEHandler 
         This is an interface for SequenceOfEvents (SOE) callbacks from the Master stack to the application layer.
 """
-class MySOEHandler(opendnp3.ISOEHandler):
-    def __init__(self):
-        super(MySOEHandler, self).__init__()
 
-    def Process(self, info, values):
-        """
-            Process measurement data.
-
-        :param info: HeaderInfo
-        :param values: A collection of values received from the Outstation (various data types are possible).
-        """
-        visitor_class_types = {
-            opendnp3.ICollectionIndexedBinary: VisitorIndexedBinary,
-            opendnp3.ICollectionIndexedDoubleBitBinary: VisitorIndexedDoubleBitBinary,
-            opendnp3.ICollectionIndexedCounter: VisitorIndexedCounter,
-            opendnp3.ICollectionIndexedFrozenCounter: VisitorIndexedFrozenCounter,
-            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalog,
-            opendnp3.ICollectionIndexedBinaryOutputStatus: VisitorIndexedBinaryOutputStatus,
-            opendnp3.ICollectionIndexedAnalogOutputStatus: VisitorIndexedAnalogOutputStatus,
-            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval
-        }
-        visitor_class = visitor_class_types[type(values)]
-        visitor = visitor_class()
-        values.Foreach(visitor)
-        for index, value in visitor.index_and_value:
-            log_string = 'SOEHandler.Process {0}\theaderIndex={1}\tdata_type={2}\tindex={3}\tvalue={4}'
-            print(log_string.format(info.gv, info.headerIndex, type(values).__name__, index, value))
-
-    def Start(self):
-        print('In SOEHandler.Start')
-
-    def End(self):
-        print('In SOEHandler.End')
 
 class OutstationSOEProxy(opendnp3.ISOEHandler):
     def __init__(self, logger, outstation_id):
@@ -425,25 +344,29 @@ class OutstationSOEProxy(opendnp3.ISOEHandler):
         self.logger.setLevel(logging.DEBUG)
 
     def Process(self, info, values):
+
         visitor_class_types = {
             opendnp3.ICollectionIndexedBinary: VisitorIndexedBinary,
             opendnp3.ICollectionIndexedDoubleBitBinary: VisitorIndexedDoubleBitBinary,
             opendnp3.ICollectionIndexedCounter: VisitorIndexedCounter,
             opendnp3.ICollectionIndexedFrozenCounter: VisitorIndexedFrozenCounter,
-            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalog,
             opendnp3.ICollectionIndexedBinaryOutputStatus: VisitorIndexedBinaryOutputStatus,
             opendnp3.ICollectionIndexedAnalogOutputStatus: VisitorIndexedAnalogOutputStatus,
-            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval
+            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval,
+            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalogTime
         }
         visitor_class = visitor_class_types.get(type(values))
         if visitor_class:
             visitor = visitor_class()
             values.Foreach(visitor)
-            for index, value in visitor.index_and_value:
+            for item in visitor.index_and_value:
+                index = item[0]
+                value = item[1]
+                event_time = item[2] if len(item) > 2 else None
                 key = (self.outstation_id, info.gv, index)
                 self.data[key] = value
                 self.logger.debug(
-                    f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Value {value}")
+                    f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Value {value}, Time {event_time}")
 
     def Start(self):
         print('In SOEHandler.Start')
@@ -453,11 +376,8 @@ class OutstationSOEProxy(opendnp3.ISOEHandler):
 
 
 class RemoteTerminal():
-    def __init__(self, gateway, device, master, soe_handler,
-                 listener=asiodnp3.PrintingChannelListener().Create(),
-                 # Add the outstation_id and base_handler
-                 master_application=asiodnp3.DefaultMasterApplication().Create(),
-                 stack_config=None):
+    def __init__(self, gateway, device, master, soe_handler):
+
         self.gateway = gateway
         self.config = device
         self.master_log_level:int=15
@@ -482,10 +402,12 @@ class RemoteTerminal():
         polling_int = int(self.polling_interval)
 
         self._log.debug('Configuring some scans (periodic reads).')
+
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
         self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
                                                   openpal.TimeDuration().Milliseconds(polling_int),
                                                   opendnp3.TaskConfig().Default())
+
         # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
         #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
         #                                          openpal.TimeDuration().Minutes(1),
@@ -496,11 +418,14 @@ class RemoteTerminal():
 
         print(f"Outstation id ==== {self.remote_id}")
 
+
+
+
+
 class MyChannelListener(asiodnp3.IChannelListener):
     """
         Override IChannelListener in this manner to implement application-specific channel behavior.
     """
-
     def __init__(self):
         super(AppChannelListener, self).__init__()
 
@@ -559,3 +484,80 @@ def restart_callback(result=opendnp3.RestartOperationResult()):
         print("Restart success | Restart Time: {}".format(result.restartTime.GetMilliseconds()))
     else:
         print("Restart fail | Failure: {}".format(opendnp3.TaskCompletionToString(result.summary)))
+
+
+class RemoteTerminal_OLD():
+    def __init__(self, gateway, device, master_id, master_ip):
+        self.name = device.get("deviceName")
+        self.datatypes = ('attributes', 'telemetry')
+        self.config = device
+
+        self.previous_poll_time = 0
+        self.polling_interval = device.get("polling_interval",10000)
+
+        self.master_ip = master_ip
+        self.master_id = master_id
+        self.remote_ip = device.get("outstation_ip")
+        self.remote_id = device.get("outstation_id")
+        self.timeout = device.get("timeout", 3)
+        self.max_retries = device.get("max_retries", 2)
+        self.retry_delay = device.get("retry_delay",1)
+
+        self._log = init_logger(gateway, "RTU Init", "INFO", enable_remote_logging=True)
+
+        self.uplink_converter = None
+        self.downlink_converter = None
+
+        """initialise device masters if not yet set up """
+        try:
+            self.master = MyMasterNew(
+                master_ip=self.master_ip,
+                outstation_ip=self.remote_ip,
+                port=device.get("port"),
+                master_id=self.master_id,
+                outstation_id=self.remote_id,
+                delay_polling_retry=self.retry_delay,
+                timeout = self.timeout,
+                num_polling_retry= self.max_retries
+            )
+            sleep(2)
+            device.master.start()
+            sleep(5)
+        except Exception as e:
+            self._log.exception(e)
+            self._log.error("DNP3 connection initialisation failed - ip %s, id %s", self.master_ip, self.master_id )
+            return
+
+class MySOEHandler(opendnp3.ISOEHandler):
+    def __init__(self):
+        super(MySOEHandler, self).__init__()
+
+    def Process(self, info, values):
+        """
+            Process measurement data.
+
+        :param info: HeaderInfo
+        :param values: A collection of values received from the Outstation (various data types are possible).
+        """
+        visitor_class_types = {
+            opendnp3.ICollectionIndexedBinary: VisitorIndexedBinary,
+            opendnp3.ICollectionIndexedDoubleBitBinary: VisitorIndexedDoubleBitBinary,
+            opendnp3.ICollectionIndexedCounter: VisitorIndexedCounter,
+            opendnp3.ICollectionIndexedFrozenCounter: VisitorIndexedFrozenCounter,
+            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalog,
+            opendnp3.ICollectionIndexedBinaryOutputStatus: VisitorIndexedBinaryOutputStatus,
+            opendnp3.ICollectionIndexedAnalogOutputStatus: VisitorIndexedAnalogOutputStatus,
+            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval
+        }
+        visitor_class = visitor_class_types[type(values)]
+        visitor = visitor_class()
+        values.Foreach(visitor)
+        for index, value in visitor.index_and_value:
+            log_string = 'SOEHandler.Process {0}\theaderIndex={1}\tdata_type={2}\tindex={3}\tvalue={4}'
+            print(log_string.format(info.gv, info.headerIndex, type(values).__name__, index, value))
+
+    def Start(self):
+        print('In SOEHandler.Start')
+
+    def End(self):
+        print('In SOEHandler.End')
