@@ -15,6 +15,8 @@ class DNP3Converter:
         """
         self.master = master_application
 
+        print("dnp3_converter.py is ACTIVE")
+
     def get_binary_inputs(self):
         """
         Reads binary inputs from the DNP3 outstation.

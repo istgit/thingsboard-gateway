@@ -23,6 +23,10 @@ from threading import Thread
 from typing import Dict
 from time import time, sleep
 
+import csv
+import os
+from typing import Dict, Tuple, Optional
+
 from pydnp3 import opendnp3, openpal, asiopal, asiodnp3
 from dnp3_python.dnp3station.station_utils import MyLogger, AppChannelListener, SOEHandler
 from dnp3_python.dnp3station.station_utils import parsing_gvid_to_gvcls, parsing_gv_to_mastercmdtype
@@ -121,6 +125,7 @@ class DNP3Connector(Connector, Thread):
             port = device.get("port", 20000)
             print(self._master_ip)
             device_name = device.get("deviceName")
+            profile_file = device.get("profile", "DNP3Profile.csv")
             self._log.debug(f"Configuring outstation {outstation_id}: IP {outstation_ip}, Port {port}")
 
 
@@ -140,7 +145,7 @@ class DNP3Connector(Connector, Thread):
             stack_config.link.LocalAddr = self._master_id
             stack_config.link.RemoteAddr = outstation_id
 
-            self._soe_handlers[outstation_id] = OutstationSOEProxy(self._log, outstation_id)
+            self._soe_handlers[outstation_id] = OutstationSOEProxy(self._log, outstation_id, profile_file)
 
             master = channel.AddMaster(f"master_{outstation_id}",
                                        self._soe_handlers[outstation_id],
@@ -242,6 +247,7 @@ class DNP3Connector(Connector, Thread):
 
         if device_responses:
             converted_data: ConvertedData = device.uplink_converter.convert(device, device_responses)
+            print("CONVERTED DATA: ",converted_data)
 
             if (converted_data is not None and
                     (converted_data.attributes_datapoints_count > 0 or
@@ -255,6 +261,7 @@ class DNP3Connector(Connector, Thread):
             #response = device.master.send_scan_all_request()
             #response = device.master.get_db_by_group_variation(group=1, variation=2)
             response = {k: v for k, v in self._soe_handlers[device.remote_id].data.items() if k[0] == device.remote_id}
+            print("FROM PROCESSMETHODS:", response)
             pass
         elif method == "g30v2":
             #response = device.get_db_by_group_variation(group=30, variation=2)
@@ -286,7 +293,6 @@ class DNP3Connector(Connector, Thread):
                 "port": device.get("port", 20000),
                 "polling_interval": device.get("polling_interval", 5000)
                 }
-
 
     def on_attributes_update(self, content):
         try:
@@ -336,12 +342,60 @@ class DNP3Connector(Connector, Thread):
 
 
 class OutstationSOEProxy(opendnp3.ISOEHandler):
-    def __init__(self, logger, outstation_id):
+    def __init__(self, logger: logging.Logger, outstation_id: int, profile_file: str,
+                 profile_dir: str = "/home/enmac/PycharmProjects/thingsboard-gateway/thingsboard_gateway/connectors/dnp3"):
+        """
+        Initialize SOE handler with profile mapping.
+
+        Args:
+            logger: Logger instance for debugging.
+            outstation_id: DNP3 outstation ID.
+            profile_file: Name of the profile CSV file (e.g., 'dnp3profile.csv').
+            profile_dir: Directory containing profile files.
+        """
         super().__init__()
-        self.data = {}
+        self.data: Dict[
+            Tuple[int, str], Tuple[any, Optional[int]]] = {}  # {(outstation_id, field): (value, event_time)}
         self.logger = logger
         self.outstation_id = outstation_id
         self.logger.setLevel(logging.DEBUG)
+        self.profile = self._load_profile(os.path.join(profile_dir, profile_file))
+
+    def _load_profile(self, profile_path: str) -> Dict[Tuple[opendnp3.GroupVariation, int], str]:
+        """
+        Load DNP3 profile from CSV file.
+
+        Args:
+            profile_path: Path to the CSV file.
+
+        Returns:
+            Dict mapping (GroupVariation, Index) to Field name.
+        """
+        profile = {}
+        try:
+            if not os.path.exists(profile_path):
+                self.logger.error(f"Profile file {profile_path} not found")
+                return profile
+
+            with open(profile_path, 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    group_variation_str = row['GroupVariation']
+                    index = int(row['Index'])
+                    field = row['Field']
+
+                    # Convert GroupVariation string (e.g., 'Group1Var1') to opendnp3.GroupVariation
+                    try:
+                        group_variation = getattr(opendnp3.GroupVariation, group_variation_str)
+                    except AttributeError:
+                        self.logger.warning(f"Invalid GroupVariation {group_variation_str} in profile")
+                        continue
+
+                    profile[(group_variation, index)] = field
+                    self.logger.debug(f"Loaded profile mapping: {group_variation}, {index} → {field}")
+        except Exception as e:
+            self.logger.error(f"Error loading profile {profile_path}: {str(e)}")
+        return profile
 
     def Process(self, info, values):
 
@@ -362,11 +416,18 @@ class OutstationSOEProxy(opendnp3.ISOEHandler):
             for item in visitor.index_and_value:
                 index = item[0]
                 value = item[1]
-                event_time = item[2] if len(item) > 2 else None
-                key = (self.outstation_id, info.gv, index)
-                self.data[key] = value
+                event_time = item[2] if len(item) > 2 else 0
+
+                # Map to field name using profile
+                field = self.profile.get((info.gv, index), f"Unknown_{info.gv}_{index}")
+
+                # Store in self.data with field name
+                key = (self.outstation_id, field)
+                self.data[key] = value, event_time
                 self.logger.debug(
-                    f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Value {value}, Time {event_time}")
+                    f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Field {field} ,Value {value}, Time {event_time}")
+
+
 
     def Start(self):
         print('In SOEHandler.Start')
@@ -398,6 +459,7 @@ class RemoteTerminal():
         self.soe_handler = soe_handler
         self.uplink_converter = None
         self.downlink_converter = None
+        self.profile = self.config.get("profile")
 
         polling_int = int(self.polling_interval)
 
@@ -419,145 +481,3 @@ class RemoteTerminal():
         print(f"Outstation id ==== {self.remote_id}")
 
 
-
-
-
-class MyChannelListener(asiodnp3.IChannelListener):
-    """
-        Override IChannelListener in this manner to implement application-specific channel behavior.
-    """
-    def __init__(self):
-        super(AppChannelListener, self).__init__()
-
-    def OnStateChange(self, state):
-        print('In AppChannelListener.OnStateChange: state={}'.format(opendnp3.ChannelStateToString(state)))
-
-class MyMasterApplication(opendnp3.IMasterApplication):
-    def __init__(self):
-        super(MyMasterApplication, self).__init__()
-
-    # Overridden method
-    def AssignClassDuringStartup(self):
-        print('In MasterApplication.AssignClassDuringStartup')
-        return False
-
-    # Overridden method
-    def OnClose(self):
-        print('In MasterApplication.OnClose')
-
-    # Overridden method
-    def OnOpen(self):
-        print('In MasterApplication.OnOpen')
-
-    # Overridden method
-    def OnReceiveIIN(self, iin):
-        print('In MasterApplication.OnReceiveIIN')
-
-    # Overridden method
-    def OnTaskComplete(self, info):
-        print('In MasterApplication.OnTaskComplete')
-
-    # Overridden method
-    def OnTaskStart(self, type, id):
-        print('In MasterApplication.OnTaskStart')
-
-def collection_callback(result=None):
-    """
-    :type result: opendnp3.CommandPointResult
-    """
-    print("Header: {0} | Index:  {1} | State:  {2} | Status: {3}".format(
-        result.headerIndex,
-        result.index,
-        opendnp3.CommandPointStateToString(result.state),
-        opendnp3.CommandStatusToString(result.status)
-    ))
-
-def command_callback(result=None):
-    """
-    :type result: opendnp3.ICommandTaskResult
-    """
-    print("Received command result with summary: {}".format(opendnp3.TaskCompletionToString(result.summary)))
-    result.ForeachItem(collection_callback)
-
-def restart_callback(result=opendnp3.RestartOperationResult()):
-    if result.summary == opendnp3.TaskCompletion.SUCCESS:
-        print("Restart success | Restart Time: {}".format(result.restartTime.GetMilliseconds()))
-    else:
-        print("Restart fail | Failure: {}".format(opendnp3.TaskCompletionToString(result.summary)))
-
-
-class RemoteTerminal_OLD():
-    def __init__(self, gateway, device, master_id, master_ip):
-        self.name = device.get("deviceName")
-        self.datatypes = ('attributes', 'telemetry')
-        self.config = device
-
-        self.previous_poll_time = 0
-        self.polling_interval = device.get("polling_interval",10000)
-
-        self.master_ip = master_ip
-        self.master_id = master_id
-        self.remote_ip = device.get("outstation_ip")
-        self.remote_id = device.get("outstation_id")
-        self.timeout = device.get("timeout", 3)
-        self.max_retries = device.get("max_retries", 2)
-        self.retry_delay = device.get("retry_delay",1)
-
-        self._log = init_logger(gateway, "RTU Init", "INFO", enable_remote_logging=True)
-
-        self.uplink_converter = None
-        self.downlink_converter = None
-
-        """initialise device masters if not yet set up """
-        try:
-            self.master = MyMasterNew(
-                master_ip=self.master_ip,
-                outstation_ip=self.remote_ip,
-                port=device.get("port"),
-                master_id=self.master_id,
-                outstation_id=self.remote_id,
-                delay_polling_retry=self.retry_delay,
-                timeout = self.timeout,
-                num_polling_retry= self.max_retries
-            )
-            sleep(2)
-            device.master.start()
-            sleep(5)
-        except Exception as e:
-            self._log.exception(e)
-            self._log.error("DNP3 connection initialisation failed - ip %s, id %s", self.master_ip, self.master_id )
-            return
-
-class MySOEHandler(opendnp3.ISOEHandler):
-    def __init__(self):
-        super(MySOEHandler, self).__init__()
-
-    def Process(self, info, values):
-        """
-            Process measurement data.
-
-        :param info: HeaderInfo
-        :param values: A collection of values received from the Outstation (various data types are possible).
-        """
-        visitor_class_types = {
-            opendnp3.ICollectionIndexedBinary: VisitorIndexedBinary,
-            opendnp3.ICollectionIndexedDoubleBitBinary: VisitorIndexedDoubleBitBinary,
-            opendnp3.ICollectionIndexedCounter: VisitorIndexedCounter,
-            opendnp3.ICollectionIndexedFrozenCounter: VisitorIndexedFrozenCounter,
-            opendnp3.ICollectionIndexedAnalog: VisitorIndexedAnalog,
-            opendnp3.ICollectionIndexedBinaryOutputStatus: VisitorIndexedBinaryOutputStatus,
-            opendnp3.ICollectionIndexedAnalogOutputStatus: VisitorIndexedAnalogOutputStatus,
-            opendnp3.ICollectionIndexedTimeAndInterval: VisitorIndexedTimeAndInterval
-        }
-        visitor_class = visitor_class_types[type(values)]
-        visitor = visitor_class()
-        values.Foreach(visitor)
-        for index, value in visitor.index_and_value:
-            log_string = 'SOEHandler.Process {0}\theaderIndex={1}\tdata_type={2}\tindex={3}\tvalue={4}'
-            print(log_string.format(info.gv, info.headerIndex, type(values).__name__, index, value))
-
-    def Start(self):
-        print('In SOEHandler.Start')
-
-    def End(self):
-        print('In SOEHandler.End')

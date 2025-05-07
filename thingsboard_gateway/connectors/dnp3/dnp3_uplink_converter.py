@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from pyasn1_modules.rfc5208 import PrivateKey
 
 from thingsboard_gateway.connectors.converter import Converter
 from thingsboard_gateway.gateway.constants import REPORT_STRATEGY_PARAMETER
@@ -81,5 +82,5 @@ class DNP3UplinkConverter(Converter):
                                                   count=converted_data.attributes_datapoints_count)
         StatisticsService.count_connector_message(self._log.name, 'convertersTsProduced',
                                                   count=converted_data.telemetry_datapoints_count)
-
+        print("dnp3_uplink_converter.py is ACTIVE")
         return converted_data

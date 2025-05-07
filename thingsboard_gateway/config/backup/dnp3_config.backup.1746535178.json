@@ -18,10 +18,11 @@
         },
         {
           "key": "testscan1",
-          "method": "show"
+          "method": "run"
         }
       ],
-      "telemetry": []
+      "telemetry": [],
+      "profile": "DNP3Profile1"
     }
   ],
   "id": "022009af-3aaa-48e6-9ac6-b186f1f86082",

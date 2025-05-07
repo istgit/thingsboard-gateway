@@ -36,6 +36,7 @@ class DNP3Uplink:
             # Publish data to ThingsBoard
             logger.info(f"Publishing data to ThingsBoard: {payload}")
             self.mqtt_client.publish(topic, payload)
+            print("dnp3_uplink.py is ACTIVE")
         except Exception as e:
             logger.error(f"Error during communication: {e}")
 
