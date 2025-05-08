@@ -198,8 +198,13 @@ class DNP3Connector(Connector, Thread):
 
     def collect_statistic_and_send(self, connector_name, connector_id, data):
         self.statistics["MessagesReceived"] = self.statistics["MessagesReceived"] + 1
-        self.__gateway.send_to_storage(connector_name, connector_id, data)
-        self.statistics["MessagesSent"] = self.statistics["MessagesSent"] + 1
+        try:
+            self._log.debug(f"Sending data to ThingsBoard for {connector_name}: {data}")
+            self.__gateway.send_to_storage(connector_name, connector_id, data)
+            self.statistics["MessagesSent"] = self.statistics["MessagesSent"] + 1
+            self._log.debug(f"Successfully sent data to ThingsBoard for {connector_name}")
+        except Exception as e:
+            self._log.error(f"Failed to send data to ThingsBoard for {connector_name}: {str(e)}")
 
     async def _run(self):
         while not self.__stopped:
@@ -246,14 +251,16 @@ class DNP3Connector(Connector, Thread):
                     self._log.exception(e)
 
         if device_responses:
-            converted_data: ConvertedData = device.uplink_converter.convert(device, device_responses)
-            print("CONVERTED DATA: ",converted_data)
-
-            if (converted_data is not None and
-                    (converted_data.attributes_datapoints_count > 0 or
-                     converted_data.telemetry_datapoints_count > 0)):
-                self.collect_statistic_and_send(self.get_name(), self.get_id(), converted_data)
-
+            for key, response in device_responses.items():
+                try:
+                    converted_data = device.uplink_converter.convert(device, response)
+                    if (converted_data is not None and
+                            (converted_data.attributes_datapoints_count > 0 or
+                             converted_data.telemetry_datapoints_count > 0)):
+                        self.collect_statistic_and_send(self.get_name(), self.get_id(), converted_data)
+                        #self._soe_handlers[device.remote_id].clear_data()
+                except Exception as e:
+                    self._log.error("Error converting data for device \"%s\": %s", device.name, str(e))
 
     async def __process_methods(self, method, device, datatype_config):
         response = None
@@ -427,6 +434,10 @@ class OutstationSOEProxy(opendnp3.ISOEHandler):
                 self.logger.debug(
                     f"SOE: Outstation {self.outstation_id}, Group {info.gv}, Index {index}, Field {field} ,Value {value}, Time {event_time}")
 
+    def clear_data(self):
+        """Clear stored data to prevent stale entries."""
+        self.data.clear()
+        self.logger.debug(f"Cleared data for outstation {self.outstation_id}")
 
 
     def Start(self):

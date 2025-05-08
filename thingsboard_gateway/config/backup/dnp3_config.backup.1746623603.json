@@ -15,14 +15,15 @@
         {
           "key": "testscan1",
           "method": "g30v2"
-        },
+        }
+      ],
+      "telemetry": [
         {
           "key": "testscan1",
           "method": "run"
         }
       ],
-      "telemetry": [],
-      "profile": "DNP3Profile1"
+      "profile": "DNP3Profile1.csv"
     }
   ],
   "id": "022009af-3aaa-48e6-9ac6-b186f1f86082",
