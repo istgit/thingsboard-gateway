@@ -15,14 +15,38 @@
         {
           "key": "testscan1",
           "method": "g30v2"
-        },
+        }
+      ],
+      "telemetry": [
         {
           "key": "testscan1",
           "method": "run"
         }
       ],
-      "telemetry": [],
       "profile": "DNP3Profile1.csv"
+    },
+    {
+      "deviceName": "Dummy10",
+      "outstation_ip": "192.168.88.246",
+      "port": 20010,
+      "outstation_id": 10,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
     }
   ],
   "id": "022009af-3aaa-48e6-9ac6-b186f1f86082",

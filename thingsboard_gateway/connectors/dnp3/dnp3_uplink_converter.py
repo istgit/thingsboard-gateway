@@ -92,7 +92,7 @@ class DNP3UplinkConverter(Converter):
                             self._log.debug(f"Added attribute: {datapoint_key} = {value} for {self.device_name}")
                         else:  # telemetry
                             timestamp = event_time if event_time else server_time
-                            print(server_time)
+                            #print(server_time)
                             telemetry_entry = TelemetryEntry(
                                 values={datapoint_key: value},
                                 ts=timestamp

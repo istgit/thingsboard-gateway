@@ -258,7 +258,7 @@ class DNP3Connector(Connector, Thread):
                             (converted_data.attributes_datapoints_count > 0 or
                              converted_data.telemetry_datapoints_count > 0)):
                         self.collect_statistic_and_send(self.get_name(), self.get_id(), converted_data)
-                        #self._soe_handlers[device.remote_id].clear_data()
+                        self._soe_handlers[device.remote_id].clear_data()
                 except Exception as e:
                     self._log.error("Error converting data for device \"%s\": %s", device.name, str(e))
 
