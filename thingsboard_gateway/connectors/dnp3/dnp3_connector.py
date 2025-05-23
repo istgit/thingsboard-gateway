@@ -139,12 +139,11 @@ class DNP3Connector(Connector, Thread):
                                                  port=port,
                                                 listener=self.listener)
             self.channels[outstation_id] = channel
-
+            sleep(0.2)
             #Create a master for this channel
             stack_config = asiodnp3.MasterStackConfig()
             stack_config.link.LocalAddr = self._master_id
             stack_config.link.RemoteAddr = outstation_id
-
             self._soe_handlers[outstation_id] = OutstationSOEProxy(self._log, outstation_id, profile_file)
 
             master = channel.AddMaster(f"master_{outstation_id}",
@@ -155,8 +154,11 @@ class DNP3Connector(Connector, Thread):
             self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
             master.Enable()
             self.masters[outstation_id] = master
-
-
+            sleep(1)
+            self.slow_scan = master.AddClassScan(opendnp3.ClassField().AllClasses(),
+            openpal.TimeDuration().Milliseconds(60000),
+            opendnp3.TaskConfig().Default())
+            sleep(1)
         for device in self.__devices:
             outstation_id = device.get("outstation_id")
             newRTU = RemoteTerminal(self.__gateway, device, self.masters[outstation_id], self._soe_handlers[outstation_id])
@@ -399,7 +401,7 @@ class OutstationSOEProxy(opendnp3.ISOEHandler):
                         continue
 
                     profile[(group_variation, index)] = field
-                    self.logger.debug(f"Loaded profile mapping: {group_variation}, {index} → {field}")
+                    #self.logger.debug(f"Loaded profile mapping: {group_variation}, {index} � {field}")
         except Exception as e:
             self.logger.error(f"Error loading profile {profile_path}: {str(e)}")
         return profile
@@ -477,9 +479,9 @@ class RemoteTerminal():
         self._log.debug('Configuring some scans (periodic reads).')
 
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
-        self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
-                                                  openpal.TimeDuration().Milliseconds(polling_int),
-                                                  opendnp3.TaskConfig().Default())
+        #self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
+          #                                        openpal.TimeDuration().Milliseconds(polling_int),
+             #                                     opendnp3.TaskConfig().Default())
 
         # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
         #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
@@ -489,6 +491,4 @@ class RemoteTerminal():
         def __repr__(self):
             return f"RemoteTerminal(name={self.name}. outstation_id={self.remote_id})"
 
-        print(f"Outstation id ==== {self.remote_id}")
-
-
+        #print(f"Outstation id ==== {self.remote_id}")

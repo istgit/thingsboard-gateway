@@ -1,0 +1,951 @@
+{
+  "master_ip": "192.168.88.246",
+  "master_id": 1000,
+  "devices": [
+    {
+      "deviceName": "Dummy10",
+      "outstation_ip": "192.168.89.153",
+      "port": 20010,
+      "outstation_id": 10,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy11",
+      "outstation_ip": "192.168.89.153",
+      "port": 20011,
+      "outstation_id": 11,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy12",
+      "outstation_ip": "192.168.89.153",
+      "port": 20012,
+      "outstation_id": 12,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy13",
+      "outstation_ip": "192.168.89.153",
+      "port": 20013,
+      "outstation_id": 13,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy14",
+      "outstation_ip": "192.168.89.153",
+      "port": 20014,
+      "outstation_id": 14,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy15",
+      "outstation_ip": "192.168.89.153",
+      "port": 20015,
+      "outstation_id": 15,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy16",
+      "outstation_ip": "192.168.89.153",
+      "port": 20016,
+      "outstation_id": 16,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy17",
+      "outstation_ip": "192.168.89.153",
+      "port": 20017,
+      "outstation_id": 17,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy18",
+      "outstation_ip": "192.168.89.153",
+      "port": 20018,
+      "outstation_id": 18,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy19",
+      "outstation_ip": "192.168.89.153",
+      "port": 20019,
+      "outstation_id": 19,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy20",
+      "outstation_ip": "192.168.89.153",
+      "port": 20020,
+      "outstation_id": 20,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy21",
+      "outstation_ip": "192.168.89.153",
+      "port": 20021,
+      "outstation_id": 21,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy22",
+      "outstation_ip": "192.168.89.153",
+      "port": 20022,
+      "outstation_id": 22,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy23",
+      "outstation_ip": "192.168.89.153",
+      "port": 20023,
+      "outstation_id": 23,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy24",
+      "outstation_ip": "192.168.89.153",
+      "port": 20024,
+      "outstation_id": 24,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy25",
+      "outstation_ip": "192.168.89.153",
+      "port": 20025,
+      "outstation_id": 25,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy26",
+      "outstation_ip": "192.168.89.153",
+      "port": 20026,
+      "outstation_id": 26,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy27",
+      "outstation_ip": "192.168.89.153",
+      "port": 20027,
+      "outstation_id": 27,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy28",
+      "outstation_ip": "192.168.89.153",
+      "port": 20028,
+      "outstation_id": 28,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy29",
+      "outstation_ip": "192.168.89.153",
+      "port": 20029,
+      "outstation_id": 29,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy30",
+      "outstation_ip": "192.168.89.153",
+      "port": 20030,
+      "outstation_id": 30,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy31",
+      "outstation_ip": "192.168.89.153",
+      "port": 20031,
+      "outstation_id": 31,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy32",
+      "outstation_ip": "192.168.89.153",
+      "port": 20032,
+      "outstation_id": 32,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy33",
+      "outstation_ip": "192.168.89.153",
+      "port": 20033,
+      "outstation_id": 33,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy34",
+      "outstation_ip": "192.168.89.153",
+      "port": 20034,
+      "outstation_id": 34,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy35",
+      "outstation_ip": "192.168.89.153",
+      "port": 20035,
+      "outstation_id": 35,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy36",
+      "outstation_ip": "192.168.89.153",
+      "port": 20036,
+      "outstation_id": 36,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy37",
+      "outstation_ip": "192.168.89.153",
+      "port": 20037,
+      "outstation_id": 37,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy38",
+      "outstation_ip": "192.168.89.153",
+      "port": 20038,
+      "outstation_id": 38,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy39",
+      "outstation_ip": "192.168.89.153",
+      "port": 20039,
+      "outstation_id": 39,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy40",
+      "outstation_ip": "192.168.89.153",
+      "port": 20040,
+      "outstation_id": 40,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy41",
+      "outstation_ip": "192.168.89.153",
+      "port": 20041,
+      "outstation_id": 41,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy42",
+      "outstation_ip": "192.168.89.153",
+      "port": 20042,
+      "outstation_id": 42,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy43",
+      "outstation_ip": "192.168.89.153",
+      "port": 20043,
+      "outstation_id": 43,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy44",
+      "outstation_ip": "192.168.89.153",
+      "port": 20044,
+      "outstation_id": 44,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy45",
+      "outstation_ip": "192.168.89.153",
+      "port": 20045,
+      "outstation_id": 45,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy46",
+      "outstation_ip": "192.168.89.153",
+      "port": 20046,
+      "outstation_id": 46,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy47",
+      "outstation_ip": "192.168.89.153",
+      "port": 20047,
+      "outstation_id": 47,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy48",
+      "outstation_ip": "192.168.89.153",
+      "port": 20048,
+      "outstation_id": 48,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy49",
+      "outstation_ip": "192.168.89.153",
+      "port": 20049,
+      "outstation_id": 49,
+      "polling_interval": 60000,
+      "timeout": 3000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy50",
+      "outstation_ip": "192.168.89.153",
+      "port": 20050,
+      "outstation_id": 50,
+      "polling_interval": 60000,
+      "timeout": 60000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    }
+  ],
+  "id": "022009af-3aaa-48e6-9ac6-b186f1f86082",
+  "name": "dnp3 connector"
+}
