@@ -93,7 +93,7 @@ class DNP3Connector(Connector, Thread):
         # Single DNP3Manager and SOEHandler
         self._log.debug('Creating a DNP3Manager.')
 
-        self._manager = asiodnp3.DNP3Manager(1, asiodnp3.ConsoleLogger().Create())
+        self._manager = asiodnp3.DNP3Manager(3, asiodnp3.ConsoleLogger().Create())
         self.channels = {} # Map outstation_id to master
         self.masters = {} # Map outstation_id to channel
         self._soe_handlers = {}  # Store SOE handlers per outstation_id
@@ -146,28 +146,46 @@ class DNP3Connector(Connector, Thread):
             stack_config.link.RemoteAddr = outstation_id
             self._soe_handlers[outstation_id] = OutstationSOEProxy(self._log, outstation_id, profile_file)
 
-            master = channel.AddMaster(f"master_{outstation_id}",
+            self.master = channel.AddMaster(f"master_{outstation_id}",
                                        self._soe_handlers[outstation_id],
                                        asiodnp3.DefaultMasterApplication().Create(),
                                        stack_config)
 
             self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
-            master.Enable()
-            self.masters[outstation_id] = master
-            sleep(1)
-            self.slow_scan = master.AddClassScan(opendnp3.ClassField().AllClasses(),
-            openpal.TimeDuration().Milliseconds(60000),
-            opendnp3.TaskConfig().Default())
-            sleep(1)
+
+            self.masters[outstation_id] = self.master
+            sleep(0.01)
+
+            self.master.AddClassScan(
+                opendnp3.ClassField().AllClasses(),
+                openpal.TimeDuration().Milliseconds(600000),
+                opendnp3.TaskConfig().Default())
+
+
+
+            self.master.Enable()
+
+
+            self._log.debug(f"Added class scan for outstation {outstation_id}")
+
+
+
         for device in self.__devices:
             outstation_id = device.get("outstation_id")
             newRTU = RemoteTerminal(self.__gateway, device, self.masters[outstation_id], self._soe_handlers[outstation_id])
             if newRTU is not False:
                 RTUs.append(newRTU)
 
+
+
+            self._log.debug(f"Added class scan for outstation {outstation_id}")
+
+
         print("This is the RTUs:", RTUs)
         """ set the converters for the RTUs"""
         self.__fill_converters()
+
+
 
         self._connected = True
         try:
@@ -478,10 +496,20 @@ class RemoteTerminal():
 
         self._log.debug('Configuring some scans (periodic reads).')
 
+        # Add class scans after all masters are initialized
+        #sleep(0.01)
+        #master.AddClassScan(
+        #        opendnp3.ClassField().AllClasses(),
+        #        openpal.TimeDuration().Milliseconds(600000),
+        #        opendnp3.TaskConfig().Default()
+        #    )
+        #self._log.debug(f"Added class scan for outstation {device}")
+
+        #sleep(1)
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
         #self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
-          #                                        openpal.TimeDuration().Milliseconds(polling_int),
-             #                                     opendnp3.TaskConfig().Default())
+         #                                         openpal.TimeDuration().Milliseconds(polling_int),
+          #                                      opendnp3.TaskConfig().Default())
 
         # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
         #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),

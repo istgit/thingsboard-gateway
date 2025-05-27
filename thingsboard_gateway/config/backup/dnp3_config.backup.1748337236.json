@@ -8,7 +8,7 @@
       "port": 20010,
       "outstation_id": 10,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -31,7 +31,7 @@
       "port": 20011,
       "outstation_id": 11,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -54,7 +54,7 @@
       "port": 20012,
       "outstation_id": 12,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -77,7 +77,7 @@
       "port": 20013,
       "outstation_id": 13,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -100,7 +100,7 @@
       "port": 20014,
       "outstation_id": 14,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -123,7 +123,30 @@
       "port": 20015,
       "outstation_id": 15,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy16",
+      "outstation_ip": "192.168.89.153",
+      "port": 20016,
+      "outstation_id": 16,
+      "polling_interval": 60000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
@@ -142,11 +165,103 @@
     },
     {
       "deviceName": "Dummy17",
-      "outstation_ip": "192.168.88.246",
+      "outstation_ip": "192.168.89.153",
       "port": 20017,
       "outstation_id": 17,
       "polling_interval": 60000,
-      "timeout": 3000,
+      "timeout": 30000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy18",
+      "outstation_ip": "192.168.89.153",
+      "port": 20018,
+      "outstation_id": 18,
+      "polling_interval": 60000,
+      "timeout": 30000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy19",
+      "outstation_ip": "192.168.89.153",
+      "port": 20019,
+      "outstation_id": 19,
+      "polling_interval": 60000,
+      "timeout": 30000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy20",
+      "outstation_ip": "192.168.89.153",
+      "port": 20020,
+      "outstation_id": 20,
+      "polling_interval": 60000,
+      "timeout": 30000,
+      "max_retries": 3,
+      "retry_delay": 1000,
+      "attributes": [
+        {
+          "key": "testscan1",
+          "method": "g30v2"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "testscan1",
+          "method": "run"
+        }
+      ],
+      "profile": "DNP3Profile2.csv"
+    },
+    {
+      "deviceName": "Dummy21",
+      "outstation_ip": "192.168.89.153",
+      "port": 20021,
+      "outstation_id": 21,
+      "polling_interval": 60000,
+      "timeout": 30000,
       "max_retries": 3,
       "retry_delay": 1000,
       "attributes": [
