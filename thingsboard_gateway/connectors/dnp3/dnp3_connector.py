@@ -153,6 +153,7 @@ class DNP3Connector(Connector, Thread):
 
             self._log.debug('Enabling the master. At this point, traffic will start to flow between the Master and Outstations.')
 
+
             self.masters[outstation_id] = self.master
             sleep(0.01)
 
@@ -161,24 +162,27 @@ class DNP3Connector(Connector, Thread):
                 openpal.TimeDuration().Milliseconds(600000),
                 opendnp3.TaskConfig().Default())
 
-
-
             self.master.Enable()
+        # Now add class scans for all masters
+        #for device in self.__devices:
+        #self.master.AddClassScan(
+        #    opendnp3.ClassField().AllClasses(),
+        #    openpal.TimeDuration().Milliseconds(60000),
+        #    opendnp3.TaskConfig().Default())
+        #self._log.debug(f"Added class scan for outstation {outstation_id}")
 
-
-            self._log.debug(f"Added class scan for outstation {outstation_id}")
+        #for outstation_id, master in self.masters.items():
+          #  self._log.debug(f"Enabling master for outstation {outstation_id}")
+           # master.Enable()
 
 
 
         for device in self.__devices:
             outstation_id = device.get("outstation_id")
-            newRTU = RemoteTerminal(self.__gateway, device, self.masters[outstation_id], self._soe_handlers[outstation_id])
+            newRTU = RemoteTerminal(self.__gateway, device, self.masters[outstation_id],
+                                    self._soe_handlers[outstation_id])
             if newRTU is not False:
                 RTUs.append(newRTU)
-
-
-
-            self._log.debug(f"Added class scan for outstation {outstation_id}")
 
 
         print("This is the RTUs:", RTUs)
@@ -287,6 +291,8 @@ class DNP3Connector(Connector, Thread):
         if method == "run":
             #response = device.master.send_scan_all_request()
             #response = device.master.get_db_by_group_variation(group=1, variation=2)
+
+
             response = {k: v for k, v in self._soe_handlers[device.remote_id].data.items() if k[0] == device.remote_id}
             print("FROM PROCESSMETHODS:", response)
             pass
@@ -507,9 +513,9 @@ class RemoteTerminal():
 
         #sleep(1)
         # Set up a "slow scan", an infrequent integrity poll that requests events and static data for all classes.
-        #self.slow_scan = self.master.AddClassScan(opendnp3.ClassField().AllClasses(),
-         #                                         openpal.TimeDuration().Milliseconds(polling_int),
-          #                                      opendnp3.TaskConfig().Default())
+        #self.slow_scan = master.AddClassScan(opendnp3.ClassField().AllClasses(),
+             #                                     openpal.TimeDuration().Milliseconds(60000),
+                #                                opendnp3.TaskConfig().Default())
 
         # Set up a "fast scan", a relatively-frequent exception poll that requests events and class 1 static data.
         #self.fast_scan = self.master.AddClassScan(opendnp3.ClassField(opendnp3.ClassField.CLASS_1),
