@@ -1,12 +1,13 @@
 {
   "thingsboard": {
-    "host": "thingsboard.cloud",
+    "host": "35.208.180.242",
     "port": 1883,
     "remoteShell": false,
     "remoteConfiguration": true,
     "latencyDebugMode": false,
     "statistics": {
       "enable": true,
+      "enableCustom": true,
       "statsSendPeriodInSeconds": 60,
       "customStatsSendPeriodInSeconds": 3600
     },
@@ -21,23 +22,26 @@
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "YOUR_ACCESS_TOKEN"
+      "accessToken": "GATEWAY_TOKEN_1"
     },
     "qos": 1,
     "reportStrategy": {
-      "type": "ON_RECEIVED"
+      "type": "ON_RECEIVED",
+      "reportPeriod": 10000,
+      "ttl": 86400
     },
     "checkingDeviceActivity": {
-      "checkDeviceInactivity": false,
-      "inactivityTimeoutSeconds": 300,
-      "inactivityCheckPeriodSeconds": 10
+      "checkDeviceInactivity": true,
+      "inactivityTimeoutSeconds": 200,
+      "inactivityCheckPeriodSeconds": 300
     },
     "rateLimits": "DEFAULT_TELEMETRY_RATE_LIMIT",
     "dpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT",
     "messagesRateLimits": "DEFAULT_MESSAGES_RATE_LIMIT",
     "deviceMessagesRateLimits": "DEFAULT_MESSAGES_RATE_LIMIT",
     "deviceRateLimits": "DEFAULT_TELEMETRY_RATE_LIMIT",
-    "deviceDpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT"
+    "deviceDpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT",
+    "ts": 1763904082623
   },
   "storage": {
     "type": "memory",
@@ -49,7 +53,8 @@
     "max_records_per_file": 10000,
     "data_file_path": "./data/",
     "messages_ttl_check_in_hours": 1,
-    "messages_ttl_in_days": 7
+    "messages_ttl_in_days": 7,
+    "ts": 1763904082623
   },
   "grpc": {
     "enabled": false,
@@ -61,5 +66,16 @@
     "minTimeBetweenPingsMs": 10000,
     "minPingIntervalWithoutDataMs": 5000
   },
-  "connectors": []
+  "connectors": [
+    {
+      "type": "snmp_listener",
+      "name": "snmp_traps",
+      "configuration": "snmp_listener.json"
+    },
+    {
+      "type": "snmp",
+      "name": "snmp",
+      "configuration": "snmp.json"
+    }
+  ]
 }

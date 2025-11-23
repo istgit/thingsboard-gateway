@@ -27,7 +27,7 @@ from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
 
-# Try import Pymodbus library or install it and import
+# Try import library or install it and import
 installation_required = False
 
 try:
@@ -39,10 +39,11 @@ except ImportError:
     installation_required = True
 
 if installation_required:
-    print("Modbus library not found - installing...")
+    print("Puresnmp library not found - installing...")
     TBUtility.install_package("puresnmp", ">=2.0.0")
 
-from puresnmp import Client, credentials, PyWrapper
+# <hb> added import for version of the snmp module
+from puresnmp import Client, credentials, PyWrapper, V2C
 from puresnmp.exc import Timeout as SNMPTimeoutException
 
 
@@ -76,6 +77,9 @@ class SNMPConnector(Connector, Thread):
         self.__datatypes = ('attributes', 'telemetry')
 
         self.__loop = asyncio.new_event_loop()
+        # <hb> added property for short interval monitoring
+        self.__short_interval_mode = False
+
 
     def open(self):
         self.__stopped = False
@@ -94,7 +98,12 @@ class SNMPConnector(Connector, Thread):
             current_time = time() * 1000
             for device in self.__devices:
                 try:
-                    if device.get("previous_poll_time", 0) + device.get("pollPeriod", 10000) < current_time:
+                    # <hb> added checking for short poll interval
+                    if device.get("shortIntervalPoll", "false") == "true" and self.__short_interval_mode:
+                        poll_interval = 10000
+                    else:
+                        poll_interval = device.get("pollPeriod", 10000)
+                    if device.get("previous_poll_time", 0) + poll_interval < current_time:
                         await self.__process_data(device)
                         device["previous_poll_time"] = current_time
                 except Exception as e:
@@ -133,6 +142,15 @@ class SNMPConnector(Connector, Thread):
 
     async def __process_data(self, device):
         common_parameters = self.__get_common_parameters(device)
+        # <hb> added initiation of converted data
+        # converted_data = {}
+        converted_data = {
+            "deviceName": device["deviceName"],
+            "deviceType": device["deviceType"],
+            "attributes": [],
+            "telemetry": []
+            }
+        # </hb>
         device_responses = {}
         for datatype in self.__datatypes:
             for datatype_config in device[datatype]:
@@ -147,6 +165,16 @@ class SNMPConnector(Connector, Thread):
                         self._log.error("Unknown method: %s, configuration is: %r", method, datatype_config)
                     response = await self.__process_methods(method, common_parameters, datatype_config)
                     device_responses[datatype_config['key']] = response
+
+                    # print("converted data before: ", converted_data)
+                    # print("device data type", datatype)
+                    # converted_data.update(**device["uplink_converter"].convert((datatype, datatype_config), response))
+
+                    # <hb> check if there are alarms active requiring short interval polling
+                    if (datatype_config["key"] == "upsAlarmsPresent") and response > 0:
+                        self.__short_interval_mode = True
+                    else:
+                        self.__short_interval_mode = False
 
                     StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
                     StatisticsService.count_connector_bytes(self.name, response,
@@ -168,12 +196,17 @@ class SNMPConnector(Connector, Thread):
                 self.collect_statistic_and_send(self.get_name(), self.get_id(), converted_data)
 
     async def __process_methods(self, method, common_parameters, datatype_config):
+        # <hb> changes for snmp version 2
+        #client = Client(ip=common_parameters['ip'],
+        #                port=common_parameters['port'],
+        #                credentials=credentials.V1(common_parameters['community']))
         client = Client(ip=common_parameters['ip'],
                         port=common_parameters['port'],
-                        credentials=credentials.V1(common_parameters['community']))
+                        credentials=V2C(common_parameters['community']))
+
         client.configure(timeout=common_parameters['timeout'])
         client = PyWrapper(client)
-
+        #print('>>', method)
         response = None
 
         if method == "get":
