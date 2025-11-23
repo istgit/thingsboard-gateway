@@ -17,6 +17,8 @@ cachetools
 tb-paho-mqtt-client>=2.1.2
 tb-mqtt-client==1.13.11
 service-identity
+pysnmplib
+puresnmp
 psutil
 cryptography
 PySocks
