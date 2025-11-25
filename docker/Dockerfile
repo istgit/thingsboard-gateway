@@ -1,58 +1,67 @@
-FROM python:3.11-slim AS build
+FROM --platform=$BUILDPLATFORM python:3.11-slim AS build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+RUN echo "Running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
-COPY ./thingsboard_gateway /thingsboard_gateway
-COPY . .
-
-ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH" \
-    PYTHONPATH="." \
-    configs="/thingsboard_gateway/config" \
-    extensions="/thingsboard_gateway/extensions" \
-    logs="/thingsboard_gateway/logs"
-
-RUN mkdir -p /default-config/config /default-config/extensions/ &&  \
-    cp -r /thingsboard_gateway/config/* /default-config/config/ &&  \
-    cp -r /thingsboard_gateway/extensions/* /default-config/extensions &&  \
-    echo "Running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log && \
-    apt-get update &&  \
+# Install build dependencies
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev \
-    python3-grpcio curl pkg-config libssl-dev &&  \
-    case "$TARGETPLATFORM" in \
-        "linux/amd64") DEFAULT_HOST="x86_64-unknown-linux-gnu";; \
-        "linux/386") DEFAULT_HOST="i686-unknown-linux-gnu";; \
-        "linux/arm64") DEFAULT_HOST="aarch64-unknown-linux-gnu";; \
-        "linux/arm/v7") DEFAULT_HOST="armv7-unknown-linux-gnueabihf";; \
-        *) \
-            echo "Unsupported platform detected. Trying to use default value...";; \
-        esac && \
-    curl https://sh.rustup.rs -sSf | sh -s -- -y --default-host=$DEFAULT_HOST --profile minimal && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* && \
-    echo '#!/bin/sh\n\
-# Main start script\n\
+        gcc \
+        python3-dev \
+        build-essential \
+        libssl-dev \
+        libffi-dev \
+        zlib1g-dev \
+        curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Tell cryptography not to compile Rust
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
+
+# Copy everything first (your old working method used ADD ./ /)
+ADD ./ /
+
+# Create default config/ext folders that survive container restarts
+RUN mkdir -p /default-config/config /default-config/extensions && \
+    cp -r /thingsboard_gateway/config/*     /default-config/config/ && \
+    cp -r /thingsboard_gateway/extensions/* /default-config/extensions/
+
+# Upgrade pip and install Python dependencies
+COPY requirements.txt .
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    python3 -m pip install --no-cache-dir -r requirements.txt
+
+# Create start script
+RUN echo '#!/bin/sh\n\
 CONF_FOLDER="/thingsboard_gateway/config"\n\
 FIRSTLAUNCH="${CONF_FOLDER}/.firstlaunch"\n\
-if [ ! -f "$FIRSTLAUNCH" ]; then\n\
-    cp -r /default-config/config/* /thingsboard_gateway/config/\n\
+\n\
+if [ ! -f "${FIRSTLAUNCH}" ]; then\n\
+    echo "First launch – copying default config and extensions..."\n\
+    cp -r /default-config/config/*     /thingsboard_gateway/config/\n\
     cp -r /default-config/extensions/* /thingsboard_gateway/extensions/\n\
-    touch $FIRSTLAUNCH\n\
-    echo "#Remove this file only if you want to recreate default config files! This will overwrite existing files" > $FIRSTLAUNCH\n\
+    touch "${FIRSTLAUNCH}"\n\
+    echo "# Remove this file only if you want to recreate default config!" > "${FIRSTLAUNCH}"\n\
 fi\n\
+\n\
+# Fix DNS inside some networks\n\
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf\n\
-python /thingsboard_gateway/tb_gateway.py' > /start-gateway.sh && chmod +x /start-gateway.sh && \
-    python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    python3 -m pip install --no-cache-dir cryptography && \
-    python3 -m pip install --no-cache-dir -r requirements.txt && \
-    RUN rustup self uninstall -y || { \
-        echo "rustup uninstall failed, removing manually..."; \
-        rm -rf /root/.rustup /root/.cargo; \
-    } && \
-    apt-get remove --purge -y gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev pkg-config && \
-    apt-get autoremove -y
+\n\
+exec python /thingsboard_gateway/tb_gateway.py\n\
+' > /start-gateway.sh && chmod +x /start-gateway.sh
 
-VOLUME ["${configs}", "${extensions}", "${logs}"]
+# Clean up build dependencies to keep image small
+RUN apt-get remove --purge -y gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev curl && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
-CMD [ "/bin/sh", "/start-gateway.sh" ]
+# Environment variables
+ENV PYTHONPATH=.
+ENV PATH="/root/.local/bin:$PATH"
+
+# Persisted folders
+VOLUME ["/thingsboard_gateway/config", "/thingsboard_gateway/extensions", "/thingsboard_gateway/logs"]
+
+# Final command
+CMD ["/start-gateway.sh"]
