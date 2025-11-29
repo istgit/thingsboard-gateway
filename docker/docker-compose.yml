@@ -2,7 +2,7 @@ version: '3.4'
 services:
   tb-gateway:
     image: thingsboard/tb-gateway
-    container_name: tb-gateway
+    container_name: tb-gateway-snmp2-listener
     restart: always
 
     # Ports bindings - required by some connectors
@@ -11,8 +11,13 @@ services:
         # Uncomment and modify the following ports based on connector usage:
 #        - "1052:1052" # BACnet connector
 #        - "5026:5026" # Modbus TCP connector (Modbus Slave)
-#        - "50000:50000/tcp" # Socket connector with type TCP
-#        - "50000:50000/udp" # Socket connector with type UDP
+        - "50000:50000/tcp" # Socket connector with type TCP
+        - "50000:50000/udp" # Socket connector with type UDP
+        - "10162:10162/udp"     # snmp port
+        - "162:162/udp"         # snmp port
+        - "163:163/udp"         # snmp trap
+        - "80:80/tcp"           # web portal
+        - "443:443/tcp"         # web portal
 
     # Necessary mapping for Linux
     extra_hosts:
@@ -22,7 +27,7 @@ services:
     environment:
       - TB_GW_HOST=host.docker.internal
       - TB_GW_PORT=1883
-      - TB_GW_ACCESS_TOKEN=YOUR_ACCESS_TOKEN
+      - TB_GW_ACCESS_TOKEN=GATEWAY_TOKEN_1
       - TB_GW_LOGS_PATH=/thingsboard_gateway/logs
 
     # Volumes bind

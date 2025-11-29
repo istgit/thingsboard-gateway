@@ -20,7 +20,6 @@ from thingsboard_gateway.gateway.tb_gateway_service import TBGatewayService
 from thingsboard_gateway.gateway.hot_reloader import HotReloader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 
-
 def is_running_under_pycharm():
     return (
         "PYCHARM_HOSTED" in environ
