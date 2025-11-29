@@ -1,9 +1,11 @@
 thingsboard_gateway/venv/
+thingsboard_gateway/for_tests.py
+thingsboard_gateway/f_test.py
+thingsboard_gateway/develop_tests/
 thingsboard_gateway/logs/*
 thingsboard_gateway/config/connected_devices.json
 thingsboard_gateway/storage/data/
 .idea/
-.vscode/
 /build/
 /deb_dist/
 /dist/
@@ -25,3 +27,10 @@ venv
 /tests/blackbox/connectors/opcua/_trial_temp/
 /tests/blackbox/connectors/modbus/_trial_temp/
 *.DS_Store
+
+*
+# Docker image exports
+*.tar
+*.tar.gz
+*.tgz
+thingsboard-gateway*.tar*

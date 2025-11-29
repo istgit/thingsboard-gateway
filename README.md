@@ -20,7 +20,13 @@ Curious how the ThingsBoard IoT Gateway works in action?
 - 🖥️ Test integration with ThingsBoard Community or Professional Edition  
 
 > 💡 Ideal for evaluation, proof-of-concept, and learning how the gateway processes and routes data.
+# Containerisation Steps:
 
+- Clone Repository
+- Ensure you in correct directory (~\thingsboard-gateway)
+- _docker build -t thingsboard-gateway-snmp -f docker/Dockerfile ._
+- _docker save -o thingsboard-gateway-snmp.tar thingsboard-gateway-snmp_
+- _docker load -i thingsboard-gateway-snmp.tar_
 ---
 
 [![What is ThingsBoard IoT Gateway?](https://thingsboard.io/images/gateway/python-gateway-animd-ff.svg)](https://thingsboard.io/docs/iot-gateway/what-is-iot-gateway/)
