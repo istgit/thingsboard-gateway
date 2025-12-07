@@ -32,34 +32,17 @@
           ],
           "timeseries": [
             {
-              "key": "Pressure",
+              "key": "Humidity",
               "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.Pressure}"
-            },
-            {
-              "key": "SomeText",
-              "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.SomeText}"
-            },
-             {
-              "key": "Alarm",
-              "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.Alarm}"
-            },
-            {
-              "key": "MyNodeId",
-              "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.MyNodeId}"
+              "value": "${Root\\.Objects\\.TempSensor_G\\.Humidity}"
             }
-
-
           ],
           "rpc_methods": [],
           "attributes_updates": [
-
           ]
         }
       ]
     }
   }
 }
+

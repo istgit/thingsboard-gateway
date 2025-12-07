@@ -40,6 +40,7 @@ from thingsboard_gateway.gateway.constants import STATISTIC_MESSAGE_RECEIVED_PAR
 from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
+from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 
 try:
     from bacpypes3.apdu import ErrorRejectAbortNack
@@ -84,6 +85,10 @@ class AsyncBACnetConnector(Thread, Connector):
             self.__log.info('EDE config detected, parsing...')
             self.__parse_ede_config()
             self.__log.debug('EDE config parsed')
+
+        # importing the proprietary package registers all available custom object types and properties
+        if self.__config.get('loadProprietaryDevices', False):
+            TBModuleLoader.import_package_files(connector_type, "proprietary")
 
         if BackwardCompatibilityAdapter.is_old_config(config):
             backward_compatibility_adapter = BackwardCompatibilityAdapter(config, self.__log)
@@ -268,15 +273,19 @@ class AsyncBACnetConnector(Thread, Connector):
 
         mask = app.get('mask', "24")
         try:
-            if mask.isdigit() and not (0 <= int(mask) <= 32):
-                self.__log.warning(
-                    "The mask inside application section must be in range [0, 32], but got %s., using default - 24",
-                    mask)
-                app['mask'] = "24"
-                return True
+            if mask.isdigit():
+                mask_int = int(mask)
+                if not (0 <= mask_int <= 32):
+                    self.__log.warning(
+                        "The mask inside application section must be in range [0, 32], but got %s. Using default 24",
+                        mask)
+                    app['mask'] = "24"
+                else:
+                    app['mask'] = mask  # valid number string
             else:
+                # Check if it's a valid dotted mask like 255.255.255.0
                 IPv4Network(f"{host}/{mask}")
-                return True
+            return True
         except Exception:
             app['mask'] = "24"
             self.__log.warning("Invalid subnet mask inside application section : %s using default - 24", mask)
@@ -613,7 +622,9 @@ class AsyncBACnetConnector(Thread, Connector):
                 value = Null(())
 
             if property_id == "weeklySchedule":
-                value = await self.__prepare_weekly_schedule_value(value)
+                schedule_default = await self.__application.read_property(address, object_id, "scheduleDefault")
+                val_type = schedule_default.get_value_type()
+                value = await self.__prepare_weekly_schedule_value(value, val_type)
 
             if property_id == "listOfObjectPropertyReferences":
                 value = await self.__prepare_list_of_object_property_references_value(value, property_id)
@@ -631,16 +642,17 @@ class AsyncBACnetConnector(Thread, Connector):
             self.__log.error('Error writing property %s:%s to device %s: %s', object_id, property_id, address, err)
             return {'error': str(err)}
 
-    async def __prepare_weekly_schedule_value(self, value):
+    async def __prepare_weekly_schedule_value(self, value, val_type=Real):
         schedule = []
         raw_schedule = literal_eval(value)
         for idx, day in enumerate(raw_schedule):
             schedule.append(DailySchedule(daySchedule=[]))
             for sched in day:
+                casted_value = val_type(sched[1])
                 schedule[idx].daySchedule.append(
                     TimeValue(
                         time=time(int(sched[0].split(":")[0]), int(sched[0].split(":")[1])),
-                        value=Real(sched[1])
+                        value=casted_value
                     )
                 )
         return schedule

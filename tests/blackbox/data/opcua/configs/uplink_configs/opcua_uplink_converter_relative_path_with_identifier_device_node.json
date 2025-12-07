@@ -20,8 +20,8 @@
       },
       "mapping": [
         {
-          "deviceNodeSource": "path",
-          "deviceNodePattern": "Root\\.Objects\\.TempSensor",
+          "deviceNodeSource": "identifier",
+          "deviceNodePattern": "ns=3;i=1",
           "deviceInfo": {
             "deviceNameExpression": "Temp Sensor",
             "deviceNameExpressionSource": "constant",
@@ -34,32 +34,29 @@
             {
               "key": "Pressure",
               "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.Pressure}"
+              "value": "${Pressure}"
             },
             {
               "key": "SomeText",
-              "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.SomeText}"
+              "type": "identifier",
+              "value": "${ns=3;i=3}"
             },
-             {
+            {
               "key": "Alarm",
               "type": "path",
               "value": "${Root\\.Objects\\.TempSensor\\.Alarm}"
             },
             {
               "key": "MyNodeId",
-              "type": "path",
-              "value": "${Root\\.Objects\\.TempSensor\\.MyNodeId}"
+              "type": "identifier",
+              "value": "${ns=3;b=TXlOb2RlSWQ=}"
             }
-
-
           ],
           "rpc_methods": [],
-          "attributes_updates": [
-
-          ]
+          "attributes_updates": []
         }
       ]
     }
   }
 }
+

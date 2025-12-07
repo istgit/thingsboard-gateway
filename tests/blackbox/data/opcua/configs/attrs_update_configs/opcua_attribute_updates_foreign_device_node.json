@@ -41,7 +41,7 @@
               "type": "path",
               "value": "${Root\\.Objects\\.TempSensor\\.SomeText}"
             },
-             {
+            {
               "key": "Alarm",
               "type": "path",
               "value": "${Root\\.Objects\\.TempSensor\\.Alarm}"
@@ -50,16 +50,39 @@
               "key": "MyNodeId",
               "type": "path",
               "value": "${Root\\.Objects\\.TempSensor\\.MyNodeId}"
+            },
+            {
+              "key": "Humidity",
+              "type": "path",
+              "value": "${Root\\.Objects\\.TempSensor_G\\.Humidity}"
+            },
+            {
+              "key": "Status",
+              "type": "path",
+              "value": "${Root\\.Objects\\.TempSensor_S\\.Status}"
             }
-
-
           ],
           "rpc_methods": [],
           "attributes_updates": [
-
+            {
+              "key": "Pressure",
+              "type": "path",
+              "value": "${Root\\.Objects\\.TempSensor\\.Pressure}"
+            },
+            {
+              "key": "Humidity",
+              "type": "path",
+              "value": "${Root\\.Objects\\.TempSensor_G\\.Humidity}"
+            },
+            {
+              "key": "Status",
+              "type": "path",
+              "value": "${Root\\.Objects\\.TempSensor_S\\.Status}"
+            }
           ]
         }
       ]
     }
   }
 }
+
