@@ -1,7 +1,7 @@
 {
   "devices": [
     {
-      "deviceName": "snmp_traps",
+      "deviceName": "snmp_listener",
       "deviceType": "snmp_listener",
       "ip": "10.128.0.45",
       "port": 162,
