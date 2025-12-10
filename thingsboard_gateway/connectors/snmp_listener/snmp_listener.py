@@ -21,6 +21,8 @@ from threading import Thread
 from time import sleep, time
 
 from thingsboard_gateway.connectors.connector import Connector
+# from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
+# from thingsboard_gateway.gateway.statistics.statistics_service import StatisticsService
 from thingsboard_gateway.tb_utility.tb_loader import TBModuleLoader
 from thingsboard_gateway.tb_utility.tb_utility import TBUtility
 from thingsboard_gateway.tb_utility.tb_logger import init_logger
@@ -205,7 +207,7 @@ class SNMPListener(Connector, Thread):
                         self._log.error("Unknown method: %s, configuration is: %r", method, datatype_config)
                     if method == "listen":
                         try:
-                            # hb - refer to the callback funcion for the processing of the messages that were received.
+                            # hb - refer to the callback function for the processing of the messages that were received.
                             self.snmpEngine.transportDispatcher.runDispatcher()
                         except:
                             self.snmpEngine.transportDispatcher.closeDispatcher()

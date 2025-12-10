@@ -1,6 +1,6 @@
 {
   "thingsboard": {
-    "host": "35.208.180.242",
+    "host": "10.128.0.33",
     "port": 1883,
     "remoteShell": false,
     "remoteConfiguration": true,
@@ -69,7 +69,7 @@
   "connectors": [
     {
       "type": "snmp_listener",
-      "name": "snmp_traps",
+      "name": "snmp_listener",
       "configuration": "snmp_listener.json"
     },
     {

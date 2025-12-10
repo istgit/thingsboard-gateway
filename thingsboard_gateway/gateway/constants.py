@@ -142,6 +142,7 @@ DEFAULT_CONNECTORS = {
     "xmpp": "XMPPConnector",
     "ocpp": "OcppConnector",
     "knx": "KNXConnector",
+    "snmp_listener": "SNMPListener"
 }
 
 DEFAULT_STATISTIC = {

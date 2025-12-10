@@ -1,23 +1,20 @@
-version: '3.4'
+version: '3.8'
 services:
   tb-gateway:
     image: thingsboard/tb-gateway
     container_name: tb-gateway-snmp2-listener
-    restart: always
+    restart: unless-stopped
+
+    # this allows us to use port numbers < 1024
+    cap_add:
+      - NET_BIND_SERVICE
 
     # Ports bindings - required by some connectors
     ports:
-        - "5000:5000" # Comment if you don't use REST connector and change if you use another port
-        # Uncomment and modify the following ports based on connector usage:
-#        - "1052:1052" # BACnet connector
-#        - "5026:5026" # Modbus TCP connector (Modbus Slave)
-        - "50000:50000/tcp" # Socket connector with type TCP
-        - "50000:50000/udp" # Socket connector with type UDP
-        - "10162:10162/udp"     # snmp port
-        - "162:162/udp"         # snmp port
-        - "163:163/udp"         # snmp trap
-        - "80:80/tcp"           # web portal
-        - "443:443/tcp"         # web portal
+        # - "1883:1883"       # mqtt port for connecting to Thingsboard
+        - "161:161/udp"         # snmp port
+        - "10162:10162"         # testing port
+        - "162:162/udp"         # snmp trap
 
     # Necessary mapping for Linux
     extra_hosts:
@@ -35,6 +32,10 @@ services:
       - tb-gw-config:/thingsboard_gateway/config
       - tb-gw-logs:/thingsboard_gateway/logs
       - tb-gw-extensions:/thingsboard_gateway/extensions
+
+    labels:
+      # These three labels are what makes Portainer display it beautifully
+      - "org.portainer.stack=gateways for snmp"   # groups them under this stack name
 
 # Volumes declaration for configurations, extensions and configuration
 volumes:
