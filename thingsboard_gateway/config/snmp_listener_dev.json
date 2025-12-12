@@ -1,0 +1,61 @@
+{
+  "devices": [
+    {
+      "deviceName": "snmp_listener",
+      "deviceType": "snmp_listener",
+      "ip": "192.168.89.56",
+      "port": 10162,
+      "pollPeriod": 0,
+      "community": "public",
+      "attributes": [
+        {
+          "key": "",
+          "method": "listen",
+          "oid": "",
+          "timeout": 0
+        }
+      ],
+      "telemetry": []
+    }
+  ],
+  "device_ips": {
+    "172.24.80.126": "ups0001",
+    "172.24.80.117": "ups0002",
+    "172.24.80.118": "ups0003"
+  },
+  "oids": {
+    "1.3.6.1.2.1.1.3.0": "sysUpTime",
+    "1.3.6.1.6.3.1.1.4.1.0": "snmpTrap",
+    "1.3.6.1.2.1.33.1.6.2.1.1": "upsAlarmId",
+    "1.3.6.1.2.1.33.1.6.2.1.2": "upsAlarmDescr",
+    "1.3.6.1.2.1.33.1.6.3.1": "upsAlarmBatteryBad",
+    "1.3.6.1.2.1.33.1.6.3.2": "upsAlarmOnBattery",
+    "1.3.6.1.2.1.33.1.6.3.3": "upsAlarmLowBattery",
+    "1.3.6.1.2.1.33.1.6.3.4": "upsAlarmDepletedBattery",
+    "1.3.6.1.2.1.33.1.6.3.5": "upsAlarmTempBattery",
+    "1.3.6.1.2.1.33.1.6.3.6": "upsAlarmInputBad",
+    "1.3.6.1.2.1.33.1.6.3.7": "upsAlarmOutputBad",
+    "1.3.6.1.2.1.33.1.6.3.8": "upsAlarmOutputOverload",
+    "1.3.6.1.2.1.33.1.6.3.9": "upsAlarmOnBypass",
+    "1.3.6.1.2.1.33.1.6.3.10": "upsAlarmBypassBad",
+    "1.3.6.1.2.1.33.1.6.3.11": "upsAlarmOutputOffAsRequested",
+    "1.3.6.1.2.1.33.1.6.3.12": "upsAlarmUpsOffAsRequested",
+    "1.3.6.1.2.1.33.1.6.3.13": "upsAlarmChargerFailed",
+    "1.3.6.1.2.1.33.1.6.3.14": "upsAlarmUpsOutputOff",
+    "1.3.6.1.2.1.33.1.6.3.15": "upsAlarmUpsSystemOff",
+    "1.3.6.1.2.1.33.1.6.3.16": "upsAlarmFanFailure",
+    "1.3.6.1.2.1.33.1.6.3.17": "upsAlarmFusefailure",
+    "1.3.6.1.2.1.33.1.6.3.18": "upsAlarmGeneralFault",
+    "1.3.6.1.2.1.33.1.6.3.19": "upsAlarmDiagnosticTestFailed",
+    "1.3.6.1.2.1.33.1.6.3.20": "upsAlarmCommunicationsLost",
+    "1.3.6.1.2.1.33.1.6.3.21": "upsAlarmAwaitingPower",
+    "1.3.6.1.2.1.33.1.6.3.22": "upsAlarmShutDownPending",
+    "1.3.6.1.2.1.33.1.6.3.23": "upsAlarmShutdownImminent",
+    "1.3.6.1.2.1.33.1.6.3.24": "upsAlarmTestInProgress",
+    "1.3.6.1.2.1.33.2.1": "upsTrapOnBattery",
+    "1.3.6.1.2.1.33.2.2": "upsTrapTestCompleted",
+    "1.3.6.1.2.1.33.2.3": "upsTrapAlarmEntryAdded",
+    "1.3.6.1.2.1.33.2.4": "upsTrapAlarmEntryRemoved"
+  },
+  "id": "2fdc0695-a1a1-4b38-8331-eb0de0b3cafb"
+}
