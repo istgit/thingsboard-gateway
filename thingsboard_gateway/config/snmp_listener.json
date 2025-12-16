@@ -3,8 +3,8 @@
     {
       "deviceName": "snmp_listener",
       "deviceType": "snmp_listener",
-      "ip": "10.128.0.45",
-      "port": 162,
+      "ip": "127.0.0.1",
+      "port": 10162,
       "pollPeriod": 0,
       "community": "public",
       "attributes": [
