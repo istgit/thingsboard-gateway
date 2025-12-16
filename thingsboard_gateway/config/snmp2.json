@@ -4,7 +4,7 @@
       "deviceName": "ups0001",
       "deviceType": "snmp2",
       "ip": "172.24.80.126",
-      "port": 161,
+      "port": 10161,
       "pollPeriod": 3600000,
       "shortIntervalPoll": "false",
       "community": "public",
