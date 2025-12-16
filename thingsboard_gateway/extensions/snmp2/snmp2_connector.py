@@ -47,7 +47,7 @@ from puresnmp import Client, credentials, PyWrapper, V2C
 from puresnmp.exc import Timeout as SNMPTimeoutException
 
 
-    class SNMP2Connector(Connector, Thread):
+class SNMP2Connector(Connector, Thread):
     def __init__(self, gateway, config, connector_type):
         super().__init__()
         self.daemon = True
