@@ -16,7 +16,7 @@ from thingsboard_gateway.connectors.converter import Converter
 from thingsboard_gateway.gateway.statistics.decorators import CollectStatistics
 
 
-class SNMPDownlinkConverter(Converter):
+class SNMP2DownlinkConverter(Converter):
     def __init__(self, config):
         self.__config = config
 

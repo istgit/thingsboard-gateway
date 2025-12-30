@@ -107,13 +107,13 @@ class TBGatewayService:
     DEFAULT_TIMEOUT = 5
 
     EXPOSED_GETTERS = [
-        'ping',
-        'get_status',
-        'get_storage_name',
-        'get_storage_events_count',
-        'get_available_connectors',
-        'get_connector_status',
-        'get_connector_config'
+        "ping",
+        "get_status",
+        "get_storage_name",
+        "get_storage_events_count",
+        "get_available_connectors",
+        "get_connector_status",
+        "get_connector_config"
     ]
 
     def __init__(self, config_file=None):

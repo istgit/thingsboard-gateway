@@ -110,7 +110,7 @@ class SNMPListener(Connector, Thread):
         if(transportAddress[0] in self.__device_ips):
             print("==== Incoming Trap ====")
             for name, val in varBinds:
-                #print(f"IP address {transportAddress[0]}")
+                print(f"IP address {transportAddress[0]}")
                 #print('%s = %s' % (name.prettyPrint(), val.prettyPrint()))
                 # hb - look up the OID values for the traps and messages
                 lookup_name = name.prettyPrint()

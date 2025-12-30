@@ -66,13 +66,15 @@ class SNMP2Connector(Connector, Thread):
                                           enable_remote_logging=self.__config.get('enableRemoteLogging', False),
                                           is_connector_logger=True, attr_name=self.name)
         self.__devices = self.__config["devices"]
-        # hb - added loading of the polling profiles for the SNMP devices
+        # hb - added loading of the polling profiles for the SNMP devices and OIDs
         self.__profiles = self.__config["profiles"]
+        self.__oids = self.__config["oids"]
+
         self.statistics = {'MessagesReceived': 0,
                            'MessagesSent': 0}
         self._default_converters = {
-            "uplink": "SNMPUplinkConverter",
-            "downlink": "SNMPDownlinkConverter"
+            "uplink": "SNMP2UplinkConverter",
+            "downlink": "SNMP2DownlinkConverter"
         }
         self.__methods = ["get", "multiget", "getnext", "walk", "multiwalk", "set", "multiset",
                           "bulkget", "bulkwalk", "table", "bulktable"]
@@ -115,7 +117,7 @@ class SNMP2Connector(Connector, Thread):
 
                         try:
                             # <hb> added checking for short poll interval
-                            if self.__short_interval_mode is True and profile.get("fast_poll_option", "false") == "true":
+                            if self.__short_interval_mode is True and profile.get("fast_polling_option", "false") == "true":
                                 poll_interval = 10000
                             else:
                                 poll_interval = profile.get("pollPeriod", 10000)
@@ -192,8 +194,10 @@ class SNMP2Connector(Connector, Thread):
                     # <hb> check if there are alarms active requiring short interval polling
                     if (datatype_config["key"] == "upsAlarmsPresent") and response > 0:
                         self.__short_interval_mode = True
-                    else:
+                        print("==== SHORT INTERVAL POLLING STARTED ========")
+                    if (datatype_config["key"] == "upsAlarmsPresent") and response == 0:
                         self.__short_interval_mode = False
+                        print("==== SHORT INTERVAL POLLING ENDED ========")
 
                     StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
                     StatisticsService.count_connector_bytes(self.name, response,
@@ -206,8 +210,8 @@ class SNMP2Connector(Connector, Thread):
                 except Exception as e:
                     self._log.exception(e)
 
-        if device_responses:  # hb - also pass the profile to the uplink converter
-            converted_data: ConvertedData = device["uplink_converter"].convert(device, profile, device_responses)
+        if device_responses:  # hb - also pass the profile and oids to the uplink converter
+            converted_data: ConvertedData = device["uplink_converter"].convert(device, profile, self.__oids, device_responses)
 
             if (converted_data is not None and
                     (converted_data.attributes_datapoints_count > 0 or
@@ -289,11 +293,11 @@ class SNMP2Connector(Connector, Thread):
     def __fill_converters(self):
         try:
             for device in self.__devices:
-                device["uplink_converter"] = TBModuleLoader.import_module("snmp", device.get('converter',
+                device["uplink_converter"] = TBModuleLoader.import_module("snmp2", device.get('converter',
                                                                                              self._default_converters[
                                                                                                  "uplink"]))(device,
                                                                                                              self._converter_log)
-                device["downlink_converter"] = TBModuleLoader.import_module("snmp", device.get('converter',
+                device["downlink_converter"] = TBModuleLoader.import_module("snmp2", device.get('converter',
                                                                                                self._default_converters[
                                                                                                    "downlink"]))(device)
         except Exception as e:
