@@ -66,6 +66,8 @@ class SNMP2Connector(Connector, Thread):
                                           enable_remote_logging=self.__config.get('enableRemoteLogging', False),
                                           is_connector_logger=True, attr_name=self.name)
         self.__devices = self.__config["devices"]
+        # hb - added loading of the polling profiles for the SNMP devices
+        self.__profiles = self.__config["profiles"]
         self.statistics = {'MessagesReceived': 0,
                            'MessagesSent': 0}
         self._default_converters = {
@@ -74,11 +76,17 @@ class SNMP2Connector(Connector, Thread):
         }
         self.__methods = ["get", "multiget", "getnext", "walk", "multiwalk", "set", "multiset",
                           "bulkget", "bulkwalk", "table", "bulktable"]
+
         self.__datatypes = ('attributes', 'telemetry')
 
-        self.__loop = asyncio.new_event_loop()
+        # hb - added the possible profile types
+        self.__profile_types = ("slow_poll", "frequent_poll")
+
         # <hb> added property for short interval monitoring
         self.__short_interval_mode = False
+
+        self.__loop = asyncio.new_event_loop()
+
 
 
     def open(self):
@@ -97,21 +105,30 @@ class SNMP2Connector(Connector, Thread):
         while not self.__stopped:
             current_time = time() * 1000
             for device in self.__devices:
-                try:
-                    # <hb> added checking for short poll interval
-                    if device.get("shortIntervalPoll", "false") == "true" and self.__short_interval_mode:
-                        poll_interval = 10000
-                    else:
-                        poll_interval = device.get("pollPeriod", 10000)
-                    if device.get("previous_poll_time", 0) + poll_interval < current_time:
-                        await self.__process_data(device)
-                        device["previous_poll_time"] = current_time
-                except Exception as e:
-                    self._log.exception(e)
+                # hb - get the profiles for the device.
+                device_profiles_list = device.get("profiles")
+                for index, profile in enumerate(self.__profiles):
+                    # hb - check to see if this profile is applicable
+                    if profile.get("profile_name") in device_profiles_list:
+                        last_poll_times = device.get("last_poll_times",[0,0,0])
+                        last_poll = last_poll_times[index]
+
+                        try:
+                            # <hb> added checking for short poll interval
+                            if self.__short_interval_mode is True and profile.get("fast_poll_option", "false") == "true":
+                                poll_interval = 10000
+                            else:
+                                poll_interval = profile.get("pollPeriod", 10000)
+                            if last_poll + poll_interval < current_time:
+                                await self.__process_data(device, profile)
+                                last_poll_times[index] = current_time
+                                device["last_poll_times"] = last_poll_times
+                        except Exception as e:
+                            self._log.exception(e)
             if self.__stopped:
                 break
             else:
-                sleep(.2)
+                sleep(.1)
 
     def close(self):
         self.__stopped = True
@@ -140,20 +157,22 @@ class SNMP2Connector(Connector, Thread):
         self.__gateway.send_to_storage(connector_name, connector_id, data)
         self.statistics["MessagesSent"] = self.statistics["MessagesSent"] + 1
 
-    async def __process_data(self, device):
+    async def __process_data(self, device, profile):
         common_parameters = self.__get_common_parameters(device)
         # <hb> added initiation of converted data
         # converted_data = {}
-        converted_data = {
-            "deviceName": device["deviceName"],
-            "deviceType": device["deviceType"],
-            "attributes": [],
-            "telemetry": []
-            }
+        # converted_data = {
+        #     "deviceName": device["deviceName"],
+        #     "deviceType": device["deviceType"],
+        #     "attributes": [],
+        #     "telemetry": []
+        #     }
         # </hb>
         device_responses = {}
         for datatype in self.__datatypes:
-            for datatype_config in device[datatype]:
+            # changed to get datatypes from profile object
+            # for datatype_config in device[datatype]:
+            for datatype_config in profile[datatype]:
                 try:
                     method = datatype_config.get("method")
                     if method is None:
@@ -187,8 +206,8 @@ class SNMP2Connector(Connector, Thread):
                 except Exception as e:
                     self._log.exception(e)
 
-        if device_responses:
-            converted_data: ConvertedData = device["uplink_converter"].convert(device, device_responses)
+        if device_responses:  # hb - also pass the profile to the uplink converter
+            converted_data: ConvertedData = device["uplink_converter"].convert(device, profile, device_responses)
 
             if (converted_data is not None and
                     (converted_data.attributes_datapoints_count > 0 or
@@ -206,7 +225,7 @@ class SNMP2Connector(Connector, Thread):
 
         client.configure(timeout=common_parameters['timeout'])
         client = PyWrapper(client)
-        #print('>>', method)
+        print('>>', method)
         response = None
 
         if method == "get":
@@ -285,7 +304,7 @@ class SNMP2Connector(Connector, Thread):
         return {"ip": gethostbyname(device["ip"]),
                 "port": device.get("port", 161),
                 "timeout": device.get("timeout", 6),
-                "community": device["community"],
+                "community": device["community"]
                 }
 
     def on_attributes_update(self, content):

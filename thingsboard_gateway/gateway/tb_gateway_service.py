@@ -863,15 +863,18 @@ class TBGatewayService:
         self.connectors_configs = {}
         connectors_persistent_keys = self.__load_persistent_connector_keys()
 
+        # hb get the main configuration file listing the different connectors and classes
         if config:
             connectors_configuration_in_main_config = config.get('connectors')
         else:
             connectors_configuration_in_main_config = self.__config.get('connectors')
 
         if connectors_configuration_in_main_config:
+            # hb step through the different connector types in the main configuration
             for connector_config_from_main in connectors_configuration_in_main_config:
                 try:
                     connector_persistent_key = None
+                    # hb get the connector type
                     connector_type = connector_config_from_main["type"].lower() \
                         if connector_config_from_main.get("type") is not None else None
 
@@ -892,12 +895,13 @@ class TBGatewayService:
                         if self.__grpc_manager and self.__grpc_manager.is_alive() and connector_class:
                             connector_persistent_key = self._generate_persistent_key(connector_config_from_main,
                                                                                      connectors_persistent_keys)
-                        else:
+                        else:       # hb you will likely end up here to import the modules for the connector types in the config
                             connector_class = TBModuleLoader.import_module(connector_type,
                                                                            self._default_connectors.get(
                                                                                connector_type,
                                                                                connector_config_from_main.get('class')))
 
+                        # hb - check that you could load the connector class
                         if connector_class is not None and isinstance(connector_class, list):
                             log.warning("Connector implementation not found for %s",
                                         connector_config_from_main['name'])
@@ -909,7 +913,7 @@ class TBGatewayService:
                             log.error("Connector implementation not found for %s",
                                       connector_config_from_main['name'])
                             continue
-                        else:
+                        else:   # hb - store the class for the connector here
                             self._implemented_connectors[connector_type] = connector_class
                     elif connector_type == "grpc":
                         if connector_config_from_main.get('key') == "auto":
@@ -919,6 +923,8 @@ class TBGatewayService:
                         log.info("Connector key for GRPC connector with name [%s] is: [%s]",
                                  connector_config_from_main['name'],
                                  connector_persistent_key)
+
+                    # hb - get the connector configuration path name, check and open the config file
                     connector_config_file_path = self._config_dir + connector_config_from_main['configuration']
 
                     if not path.exists(connector_config_file_path):
@@ -928,6 +934,7 @@ class TBGatewayService:
                     with open(connector_config_file_path, 'r', encoding="UTF-8") as conf_file:
                         connector_conf_file_data = conf_file.read()
 
+                    # hb - save and decode the configuration as JSON information from the file
                     connector_conf_from_file = connector_conf_file_data
                     try:
                         connector_conf_from_file = loads(connector_conf_file_data)
@@ -935,6 +942,7 @@ class TBGatewayService:
                         log.debug(e)
                         log.warning("Cannot parse connector configuration as a JSON, it will be passed as a string.")
 
+                    # hb - get unique ID for connector
                     connector_id = TBUtility.get_or_create_connector_id(connector_conf_from_file)
 
                     if isinstance(connector_conf_from_file, dict):
@@ -951,6 +959,7 @@ class TBGatewayService:
                             connector_conf_from_file = ("{id_var_start}" + str(connector_id) + "{id_var_end}" +
                                                         connector_conf_from_file)
 
+                    # hb - store the configurations for connectors here according to type
                     if not self.connectors_configs.get(connector_type):
                         self.connectors_configs[connector_type] = []
                     if connector_type != 'grpc' and isinstance(connector_conf_from_file, dict):
@@ -1017,12 +1026,13 @@ class TBGatewayService:
                         self.__init_and_start_grpc_connector(connector_type, connector_config)
                         return
 
+                    # hb - step through the connector configs
                     for config_file_name in connector_config[CONFIG_SECTION_PARAMETER]:
                         connector = None
                         connector_name = None
                         connector_id = None
                         connector_configuration = connector_config[CONFIG_SECTION_PARAMETER].get(config_file_name)
-                        try:
+                        try:    # hb - initiate and start the connectors
                             connector_name = connector_config["name"]
                             connector_id = connector_config["id"]
                             connector = self.__init_and_start_regular_connector(connector_id,

@@ -30,7 +30,7 @@ class SNMPUplinkConverter(Converter):
 
     @CollectStatistics(start_stat_type='receivedBytesFromDevices',
                        end_stat_type='convertedBytesFromDevice')
-    def convert(self, config, data):
+    def convert(self, config, profile, data):
         device_name = self.__config['deviceName']
         device_type = self.__config['deviceType']
 
@@ -44,7 +44,8 @@ class SNMPUplinkConverter(Converter):
 
         try:
             for datatype in ('attributes', 'telemetry'):
-                for datatype_config in config[datatype]:
+                # hb - use the datatype configurations in the profiles
+                for datatype_config in profile[datatype]:
                     data_key = datatype_config["key"]
                     item_data = data.get(data_key)
                     value = None
@@ -72,9 +73,11 @@ class SNMPUplinkConverter(Converter):
                                                                                datatype_config, self._log)
                         if datatype == 'attributes':
                             converted_data.add_to_attributes(datapoint_key, value)
+                            print(datapoint_key, ": " ,value)
                         else:
                             telemetry_entry = TelemetryEntry({datapoint_key: value})
                             converted_data.add_to_telemetry(telemetry_entry)
+                            print(datapoint_key, ": ", value)
         except Exception as e:
             StatisticsService.count_connector_message(self._log.name, 'convertersMsgDropped')
             self._log.exception(e)
