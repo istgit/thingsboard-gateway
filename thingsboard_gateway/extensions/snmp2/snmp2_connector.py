@@ -194,10 +194,9 @@ class SNMP2Connector(Connector, Thread):
                     # <hb> check if there are alarms active requiring short interval polling
                     if (datatype_config["key"] == "upsAlarmsPresent") and response > 0:
                         self.__short_interval_mode = True
-                        print("==== SHORT INTERVAL POLLING STARTED ========")
+                        print("==== SHORT INTERVAL POLLING ========")
                     if (datatype_config["key"] == "upsAlarmsPresent") and response == 0:
                         self.__short_interval_mode = False
-                        print("==== SHORT INTERVAL POLLING ENDED ========")
 
                     StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
                     StatisticsService.count_connector_bytes(self.name, response,

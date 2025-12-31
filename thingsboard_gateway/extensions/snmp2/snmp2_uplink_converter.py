@@ -83,7 +83,7 @@ class SNMP2UplinkConverter(Converter):
                     else:
                         value = item_data
 
-                    if value:
+                    if value is not None:
                         datapoint_key = TBUtility.convert_key_to_datapoint_key(data_key, device_report_strategy,
                                                                                datatype_config, self._log)
                         if datatype == 'attributes':
