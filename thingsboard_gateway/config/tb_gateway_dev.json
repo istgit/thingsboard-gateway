@@ -3,7 +3,7 @@
     "host": "35.208.180.242",
     "port": 1883,
     "remoteShell": false,
-    "remoteConfiguration": true,
+    "remoteConfiguration": false,
     "latencyDebugMode": false,
     "statistics": {
       "enable": true,
@@ -22,7 +22,7 @@
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "GATEWAY_TOKEN_1"
+      "accessToken": "GATEWAY_TOKEN_2"
     },
     "qos": 1,
     "reportStrategy": {
@@ -41,7 +41,7 @@
     "deviceMessagesRateLimits": "DEFAULT_MESSAGES_RATE_LIMIT",
     "deviceRateLimits": "DEFAULT_TELEMETRY_RATE_LIMIT",
     "deviceDpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT",
-    "ts": 1763904082623
+    "ts": 1766499334173
   },
   "storage": {
     "type": "memory",
@@ -54,7 +54,7 @@
     "data_file_path": "./data/",
     "messages_ttl_check_in_hours": 1,
     "messages_ttl_in_days": 7,
-    "ts": 1763904082623
+    "ts": 1766499334173
   },
   "grpc": {
     "enabled": false,
@@ -68,16 +68,16 @@
   },
   "connectors": [
     {
-      "type": "snmp_listener",
-      "name": "snmp_listener",
-      "configuration": "snmp_listener.json",
-      "class": "SNMPListener"
-    },
-    {
       "type": "snmp2",
       "name": "snmp2",
       "configuration": "snmp2.json",
       "class": "SNMP2Connector"
+    },
+    {
+      "type": "snmp_listener",
+      "name": "snmp_listener",
+      "configuration": "snmp_listener.json",
+      "class": "SNMPListener"
     }
   ]
 }

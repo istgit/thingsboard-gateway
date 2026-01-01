@@ -30,6 +30,7 @@ services:
     # Volumes bind
     volumes:
       - tb-gw-logs:/thingsboard_gateway/logs
+      - tb-gw-conf:/thingsboard_gateway/conf
 
     labels:
       # These three labels are what makes Portainer display it beautifully
@@ -39,3 +40,5 @@ services:
 volumes:
   tb-gw-logs:
     name: tb-gw-logs
+  tb-gw-conf:
+    name: tb-gw-conf

@@ -1,40 +1,10 @@
 {
   "devices": [
     {
-      "deviceName": "ups0001",
-      "deviceType": "snmp2",
-      "site": "De Werf",
-      "ip": "10.100.115.180",
-      "port": 161,
-      "timeout": 1,
-      "community": "public",
-      "profiles": ["slow_poll", "frequent_poll"]
-    },
-    {
       "deviceName": "ups0002",
       "deviceType": "snmp2",
-      "site": "IST Mews",
+      "site": "IST-Mews",
       "ip": "192.168.88.27",
-      "port": 161,
-      "timeout": 1,
-      "community": "public",
-      "profiles": ["slow_poll", "frequent_poll"]
-    },
-    {
-      "deviceName": "ups0003",
-      "deviceType": "snmp2",
-      "site": "Swartland",
-      "ip": "10.100.62.180",
-      "port": 161,
-      "timeout": 1,
-      "community": "public",
-      "profiles": ["slow_poll", "frequent_poll"]
-    },
-    {
-      "deviceName": "ups0004",
-      "deviceType": "snmp2",
-      "site": "Osizweni",
-      "ip": "10.112.182.180",
       "port": 161,
       "timeout": 1,
       "community": "public",
@@ -44,7 +14,7 @@
   "profiles": [
     {
       "profile_name": "slow_poll",
-      "pollPeriod": 3600000,
+      "pollPeriod": 360000,
       "fast_polling_option": "false",
       "attributes": [
         {
@@ -80,7 +50,7 @@
     },
     {
       "profile_name": "frequent_poll",
-      "pollPeriod": 60000,
+      "pollPeriod": 30000,
       "fast_polling_option": "true",
       "attributes": [
           {

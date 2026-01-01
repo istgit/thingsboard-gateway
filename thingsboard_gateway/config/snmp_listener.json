@@ -3,8 +3,8 @@
     {
       "deviceName": "snmp_listener",
       "deviceType": "snmp_listener",
-      "ip": "127.0.0.1",
-      "port": 10162,
+      "ip": "10.128.0.45",
+      "port": 162,
       "pollPeriod": 0,
       "community": "public",
       "attributes": [
@@ -19,7 +19,10 @@
     }
   ],
   "device_ips": {
-    "192.168.88.27": "ups0002"
+    "10.100.115.180": "ups0001",
+    "192.168.88.27": "ups0002",
+    "10.100.62.180": "ups0003",
+    "10.112.182.180": "ups0004"
   },
   "oids": {
     "1.3.6.1.2.1.1.3.0": "sysUpTime",

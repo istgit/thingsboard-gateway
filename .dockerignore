@@ -1,14 +1,31 @@
-# ignore everyhting
-*
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
 
-# except the following
-!/thingsboard_gateway/
-!LICENSE
-!README.md
-!setup.py
-!requirements.txt
+# Build artifacts (this excludes .tar.gz and other dist files)
+dist/
+build/
+*.egg-info/
+*.tar.gz
+*.tar
+*.whl
 
-# ignore on every level
-**/__pycache__/
-**/*.py[cod]
-**/logs/
+# Logs directory contents (keep the empty folder if needed, but no data)
+logs/*
+!logs/.gitkeep # optional: create an empty .gitkeep file if you want the folder
+
+# IDE and local files
+.idea/
+.vscode/
+.git/
+.env
+venv/
+.env*
+
+# Optional: other junk
+*.swp
+*.swo
+.DS_Store
+

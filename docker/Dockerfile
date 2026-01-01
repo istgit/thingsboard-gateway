@@ -39,4 +39,3 @@ python /thingsboard_gateway/tb_gateway.py' > /start-gateway.sh && chmod +x /star
 VOLUME ["${logs}"]
 
 CMD [ "/bin/sh", "/start-gateway.sh" ]
-

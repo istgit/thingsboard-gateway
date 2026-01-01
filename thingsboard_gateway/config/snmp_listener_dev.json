@@ -4,7 +4,7 @@
       "deviceName": "snmp_listener",
       "deviceType": "snmp_listener",
       "ip": "127.0.0.1",
-      "port": 162,
+      "port": 10162,
       "pollPeriod": 0,
       "community": "public",
       "attributes": [
