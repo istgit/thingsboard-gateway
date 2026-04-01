@@ -1,0 +1,125 @@
+GroupVariation,Index,Description,Field
+Group1Var1,0,Binary Input - Packed Format,GPI0Tamper
+Group1Var1,1,Binary Input - Packed Format,GPI1Vibration
+Group1Var1,2,Binary Input - Packed Format,GPI2SupplyPresent
+Group1Var1,3,Binary Input - Packed Format,GPI3
+Group1Var1,4,Binary Input - Packed Format,GPI4
+Group1Var1,5,Binary Input - Packed Format,GPI5
+Group1Var1,6,Binary Input - Packed Format,GPI6GPSLock
+Group1Var1,7,Binary Input - Packed Format, GPI7AngleError
+Group1Var2,0,Binary Input Event - With time,GPI0Tamper
+Group1Var2,1,Binary Input Event - With time,GPI1Vibration
+Group1Var2,2,Binary Input Event - With time,GPI2SupplyPresent
+Group1Var2,3,Binary Input Event - With time,GPI3
+Group1Var2,4,Binary Input Event - With time,GPI4
+Group1Var2,5,Binary Input Event - With time,GPI5
+Group1Var2,6,Binary Input Event - With time,GPI6GPSLock
+Group1Var2,7,Binary Input Event - With time, GPI7AngleError
+Group2Var2,0,Binary Input Event - Absolute Time,GPI0TamperEvent
+Group2Var2,1,Binary Input Event - Absolute Time,GPI1VibrationEvent
+Group2Var2,2,Binary Input Event - Absolute Time,GPI2SupplyPresentEvent
+Group2Var2,3,Binary Input Event - Absolute Time,GPI3Event
+Group2Var2,4,Binary Input Event - Absolute Time,GPI4Event
+Group2Var2,5,Binary Input Event - Absolute Time,GPI5Event
+Group2Var2,6,Binary Input Event - Absolute Time,GPI6GPSLockEvent
+Group2Var2,7,Binary Input Event - Absolute Time,GPI7AngleErrorEvent
+Group10Var2,0,Binary Output - Output status with flags,GPO1
+Group10Var2,1,Binary Output - Output status with flags,GPO2
+Group11Var2,0,Binary Output - Output status with flags,GPO1
+Group11Var2,1,Binary Output - Output status with flags,GPO2
+Group13Var2,0,Binary Output - Output status with flags,GPO1
+Group13Var2,1,Binary Output - Output status with flags,GPO2
+Group20Var5,0,Counter - 32-bit without flag,kWhCounter
+Group21Var5,0,Counter - 32-bit,kWhCounter
+Group22Var5,0,Counter - 32-bit,kWhCounter
+Group23Var5,0,Counter - 32-bit,kWhCounter
+Group20Var5,1,Counter - 32-bit without flag,counter1
+Group20Var5,2,Counter - 32-bit without flag,counter2
+Group21Var5,1,Counter - 32-bit without flag,counter1
+Group21Var5,2,Counter - 32-bit without flag,counter2
+Group22Var5,1,Counter - 32-bit without flag,counter1
+Group22Var5,2,Counter - 32-bit without flag,counter2
+Group23Var5,1,Counter - 32-bit without flag,counter1
+Group23Var5,2,Counter - 32-bit without flag,counter2
+Group30Var4,0,Analog Input - 16-bit without flag,imbVoltage
+Group30Var4,1,Analog Input - 16-bit without flag,voltage1
+Group30Var4,2,Analog Input - 16-bit without flag,voltage2
+Group30Var4,3,Analog Input - 16-bit without flag,voltage3
+Group30Var4,4,Analog Input - 16-bit without flag,current1
+Group30Var4,5,Analog Input - 16-bit without flag,current2
+Group30Var4,6,Analog Input - 16-bit without flag,current3
+Group30Var4,7,Analog Input - 16-bit without flag,currentN
+Group30Var4,8,Analog Input - 16-bit without flag,angle1
+Group30Var4,9,Analog Input - 16-bit without flag,angle2
+Group30Var4,10,Analog Input - 16-bit without flag,angle3
+Group30Var4,11,Analog Input - 16-bit without flag,lineFrequency
+Group30Var4,12,Analog Input - 16-bit without flag,THD
+Group30Var4,13,Analog Input - 16-bit without flag,ambTemp
+Group30Var4,14,Analog Input - 16-bit without flag,trxTemp
+Group30Var4,15,Analog Input - 16-bit without flag,battVoltage
+Group30Var4,16,Analog Input - 16-bit without flag,psuVoltage
+Group30Var4,17,Analog Input - 16-bit without flag,gsmRSSI
+Group30Var4,18,Analog Input - 16-bit without flag,gpsSatellites
+Group32Var4,1,Analog Input Event - 16-bit with time, voltage1
+Group32Var4,2,Analog Input Event - 16-bit with time, voltage2
+Group32Var4,3,Analog Input Event - 16-bit with time, voltage3
+Group32Var4,4,Analog Input Event - 16-bit with time,current1
+Group32Var4,5,Analog Input Event - 16-bit with time,current2
+Group32Var4,6,Analog Input Event - 16-bit with time,current3
+Group32Var4,0,Analog Input Event - 16-bit with time,imbVoltage
+Group32Var4,7,Analog Input Event - 16-bit with time,currentN
+Group32Var4,8,Analog Input Event - 16-bit with timeg,angle1
+Group32Var4,9,Analog Input Event - 16-bit with time,angle2
+Group32Var4,10,Analog Input Event - 16-bit with time,angle3
+Group32Var4,11,Analog Input Event - 16-bit with time,lineFrequency
+Group32Var4,12,Analog Input Event - 16-bit with time,THD
+Group32Var4,13,Analog Input Event - 16-bit with time,ambTemp
+Group32Var4,14,Analog Input Event - 16-bit with time,trxTemp
+Group32Var4,15,Analog Input Event - 16-bit with time,battVoltage
+Group32Var4,16,Analog Input Event - 16-bit with time,psuVoltage
+Group32Var4,17,Analog Input Event - 16-bit with time,gsmRSSI
+Group32Var4,18,Analog Input Event - 16-bit with time,gpsSatellites
+Group40Var2,0,Analog Output Status - 16-bit without flags,anaOutput0
+Group40Var2,1,Analog Output Status - 16-bit without flags,anaOutput1
+Group40Var2,2,Analog Output Status - 16-bit without flags,anaOutput2
+Group40Var2,3,Analog Output Status - 16-bit without flags,anaOutput3
+Group40Var2,4,Analog Output Status - 16-bit without flags,anaOutput4
+Group40Var2,5,Analog Output Status - 16-bit without flags,anaOutput5
+Group40Var2,6,Analog Output Status - 16-bit without flags,anaOutput6
+Group40Var2,7,Analog Output Status - 16-bit without flags,anaOutput7
+Group40Var2,8,Analog Output Status - 16-bit without flags,anaOutput8
+Group40Var2,9,Analog Output Status - 16-bit without flags,anaOutput9
+Group40Var2,10,Analog Output Status - 16-bit without flags,anaOutput10
+Group41Var2,0,Analog Output Status - 16-bit without flags,anaOutput0
+Group41Var2,1,Analog Output Status - 16-bit without flags,anaOutput1
+Group41Var2,2,Analog Output Status - 16-bit without flags,anaOutput2
+Group41Var2,3,Analog Output Status - 16-bit without flags,anaOutput3
+Group41Var2,4,Analog Output Status - 16-bit without flags,anaOutput4
+Group41Var2,5,Analog Output Status - 16-bit without flags,anaOutput5
+Group41Var2,6,Analog Output Status - 16-bit without flags,anaOutput6
+Group41Var2,7,Analog Output Status - 16-bit without flags,anaOutput7
+Group41Var2,8,Analog Output Status - 16-bit without flags,anaOutput8
+Group41Var2,9,Analog Output Status - 16-bit without flags,anaOutput9
+Group41Var2,10,Analog Output Status - 16-bit without flags,anaOutput10
+Group42Var2,0,Analog Output Status - 16-bit without flags,anaOutput0
+Group42Var2,1,Analog Output Status - 16-bit without flags,anaOutput1
+Group42Var2,2,Analog Output Status - 16-bit without flags,anaOutput2
+Group42Var2,3,Analog Output Status - 16-bit without flags,anaOutput3
+Group42Var2,4,Analog Output Status - 16-bit without flags,anaOutput4
+Group42Var2,5,Analog Output Status - 16-bit without flags,anaOutput5
+Group42Var2,6,Analog Output Status - 16-bit without flags,anaOutput6
+Group42Var2,7,Analog Output Status - 16-bit without flags,anaOutput7
+Group42Var2,8,Analog Output Status - 16-bit without flags,anaOutput8
+Group42Var2,9,Analog Output Status - 16-bit without flags,anaOutput9
+Group42Var2,10,Analog Output Status - 16-bit without flags,anaOutput10
+Group43Var2,0,Analog Output Status - 16-bit without flags,anaOutput0
+Group43Var2,1,Analog Output Status - 16-bit without flags,anaOutput1
+Group43Var2,2,Analog Output Status - 16-bit without flags,anaOutput2
+Group43Var2,3,Analog Output Status - 16-bit without flags,anaOutput3
+Group43Var2,4,Analog Output Status - 16-bit without flags,anaOutput4
+Group43Var2,5,Analog Output Status - 16-bit without flags,anaOutput5
+Group43Var2,6,Analog Output Status - 16-bit without flags,anaOutput6
+Group43Var2,7,Analog Output Status - 16-bit without flags,anaOutput7
+Group43Var2,8,Analog Output Status - 16-bit without flags,anaOutput8
+Group43Var2,9,Analog Output Status - 16-bit without flags,anaOutput9
+Group43Var2,10,Analog Output Status - 16-bit without flags,anaOutput10

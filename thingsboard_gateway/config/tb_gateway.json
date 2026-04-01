@@ -1,27 +1,27 @@
 {
   "thingsboard": {
-    "host": "localhost",
+    "host": "35.209.127.120",
     "port": 1883,
     "remoteShell": false,
     "remoteConfiguration": true,
     "latencyDebugMode": false,
     "statistics": {
       "enable": true,
-      "statsSendPeriodInSeconds": 60,
+      "statsSendPeriodInSeconds": 120,
       "customStatsSendPeriodInSeconds": 3600
     },
     "deviceFiltering": {
       "enable": false,
       "filterFile": "list.json"
     },
-    "maxPayloadSizeBytes": 8196,
-    "minPackSendDelayMS": 50,
+    "maxPayloadSizeBytes": 10196,
+    "minPackSendDelayMS": 100,
     "minPackSizeToSend": 500,
-    "checkConnectorsConfigurationInSeconds": 60,
+    "checkConnectorsConfigurationInSeconds": 3600,
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "YgS0PXBLFlaNeLwMH7RJ"
+      "accessToken": "weoamgwih8ugmfhuk4jt"
     },
     "qos": 1,
     "reportStrategy": {
@@ -40,14 +40,13 @@
     "deviceDpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT"
   },
   "storage": {
-    "type": "memory",
-    "read_records_count": 100,
-    "max_records_count": 100000,
-    "data_folder_path": "./data/",
-    "max_file_count": 10,
-    "max_read_records_count": 10,
-    "max_records_per_file": 10000,
+    "type": "sqlite",
     "data_file_path": "./data/data.db",
+    "max_read_records_count": 2000,
+    "size_limit": 1024,
+    "max_db_amount": 10,
+    "oversize_check_period": 1,
+    "writing_batch_size": 2000,
     "messages_ttl_check_in_hours": 1,
     "messages_ttl_in_days": 7
   },
@@ -64,8 +63,14 @@
   "connectors": [
     {
       "type": "dnp3",
-      "name": "dnp3 connector",
-      "configuration": "dnp3_config.json"
+      "name": "dnp3Connector",
+      "configuration": "dnp3Connector.json"
+    },
+    {
+      "type": "simpletrutalk",
+      "name": "SimpleTruTalkConnector",
+      "class": "SimpleTruTalkConnector",
+      "configuration": "simpletrutalk_connector_config.json"
     }
   ]
 }

@@ -1,0 +1,36 @@
+GroupVariation,Index,Description,Field
+Group1Var1,0,Binary Input - Packed Format,Lid Tamper Switch
+Group1Var1,1,Binary Input - Packed Format,Vibration Sensor
+Group1Var1,2,Binary Input - Packed Format,Supply Present
+Group1Var1,3,Binary Input - Packed Format,External Digital Input 1
+Group1Var1,4,Binary Input - Packed Format,External Digital Input 2
+Group1Var1,5,Binary Input - Packed Format,External Digital Input 3
+Group1Var1,6,Binary Input - Packed Format,GPS Position valid (lock) or not
+Group1Var1,7,Binary Input - Packed Format, Phase Angle Error Flag
+Group10Var2,0,Binary Output - Output status with flags,General Purpose Open Collector Output 1
+Group10Var2,1,Binary Output - Output status with flags,General Purpose Open Collector Output 2
+Group20Var5,0,Counter - 32-bit without flag,Accumulative kWh Energy Counter
+Group20Var5,1,Counter - 32-bit without flag,Pulse Counter1
+Group20Var5,2,Counter - 32-bit without flag,Pulse Counter2
+Group30Var4,0,Analog Input - 16-bit without flag,Voltage Imbalance
+Group30Var4,1,Analog Input - 16-bit without flag,Red Phase Voltage
+Group30Var4,2,Analog Input - 16-bit without flag,White Phase Voltage
+Group30Var4,3,Analog Input - 16-bit without flag,Blue Phase Voltage
+Group30Var4,4,Analog Input - 16-bit without flag,Red Phase Current
+Group30Var4,5,Analog Input - 16-bit without flag,White Phase Current
+Group30Var4,6,Analog Input - 16-bit without flag,Blue Phase Current
+Group30Var4,7,Analog Input - 16-bit without flag,Earth/Neutral Current
+Group30Var4,8,Analog Input - 16-bit without flag,Phase Angle Between Red Current and Voltage
+Group30Var4,9,Analog Input - 16-bit without flag,Phase Angle Between White Current and Voltage
+Group30Var4,10,Analog Input - 16-bit without flag,Phase Angle Between Blue Current and Voltage
+Group30Var4,11,Analog Input - 16-bit without flag,Line Frequency
+Group30Var4,12,Analog Input - 16-bit without flag,Total Harmonic Distortion (THD)
+Group30Var4,13,Analog Input - 16-bit without flag,Ambient Temperature
+Group30Var4,14,Analog Input - 16-bit without flag,Transformer Temperature
+Group30Var4,15,Analog Input - 16-bit without flag,Internal Battery Voltage
+Group30Var4,16,Analog Input - 16-bit without flag,PSU Output Voltage
+Group30Var4,17,Analog Input - 16-bit without flag,GSM Received Signal Strength
+Group30Var4,18,Analog Input - 16-bit without flag,Number of Satellites in Range
+Group32Var4,1,Analog Input Event - 16-bit with time, Unknown
+Group32Var4,2,Analog Input Event - 16-bit with time, Unknown
+Group32Var4,3,Analog Input Event - 16-bit with time, Unknown

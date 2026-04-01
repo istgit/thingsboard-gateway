@@ -25,7 +25,22 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
-from distutils.util import strtobool
+# from distutils.util import strtobool
+
+def strtobool(val):
+    """Convert a string representation of truth to True (1) or False (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1';
+    False values are 'n', 'no', 'f', 'false', 'off', and '0'.
+    Raises ValueError if 'val' is anything else.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError(f"Invalid truth value {val}")
+
 from jsonpath_rw import parse
 from orjson import JSONDecodeError, dumps, loads
 

@@ -7,7 +7,7 @@ charset-normalizer==3.4.1
 cmake==3.31.4
 cryptography==44.0.0
 decorator==5.1.1
-dnp3-python==0.2.3b2
+dnp3-python==0.3.0b2
 grpcio==1.70.0
 idna==3.10
 jsonpath-rw==1.4.0

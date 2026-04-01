@@ -1,55 +1,72 @@
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS build
-
+FROM --platform=$BUILDPLATFORM python:3.9-slim AS build
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+RUN echo "Running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+ 
+# Update package lists and install necessary dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev \
+   && apt-get install python3-grpcio -y && rm -rf /var/lib/apt/lists/*
+ 
+# Copy the application code and configuration
+ADD ./ /
 
-COPY ./thingsboard_gateway /thingsboard_gateway
-COPY . .
-
-ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH" \
-    PYTHONPATH="." \
-    configs="/thingsboard_gateway/config" \
-    extensions="/thingsboard_gateway/extensions" \
-    logs="/thingsboard_gateway/logs"
-
-RUN mkdir -p /default-config/config /default-config/extensions/ &&  \
-    cp -r /thingsboard_gateway/config/* /default-config/config/ &&  \
-    cp -r /thingsboard_gateway/extensions/* /default-config/extensions &&  \
-    echo "Running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log && \
-    apt-get update &&  \
-    apt-get install -y --no-install-recommends \
-    gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev \
-    python3-grpcio curl pkg-config libssl-dev &&  \
-    case "$TARGETPLATFORM" in \
-        "linux/amd64") DEFAULT_HOST="x86_64-unknown-linux-gnu";; \
-        "linux/386") DEFAULT_HOST="i686-unknown-linux-gnu";; \
-        "linux/arm64") DEFAULT_HOST="aarch64-unknown-linux-gnu";; \
-        "linux/arm/v7") DEFAULT_HOST="armv7-unknown-linux-gnueabihf";; \
-        *) \
-            echo "Unsupported platform detected. Trying to use default value...";; \
-        esac && \
-    curl https://sh.rustup.rs -sSf | sh -s -- -y --default-host=$DEFAULT_HOST --profile minimal && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* && \
-    echo '#!/bin/sh\n\
-# Main start script\n\
-CONF_FOLDER="/thingsboard_gateway/config"\n\
-FIRSTLAUNCH="${CONF_FOLDER}/.firstlaunch"\n\
-if [ ! -f "$FIRSTLAUNCH" ]; then\n\
-    cp -r /default-config/config/* /thingsboard_gateway/config/\n\
-    cp -r /default-config/extensions/* /thingsboard_gateway/extensions/\n\
-    touch $FIRSTLAUNCH\n\
-    echo "#Remove this file only if you want to recreate default config files! This will overwrite existing files" > $FIRSTLAUNCH\n\
+# Set up the start script
+RUN echo '#Main start script\n\
+CONF_FOLDER="./thingsboard_gateway/config"\n\
+firstlaunch=${CONF_FOLDER}/.firstlaunch\n\
+\n\
+if [ ! -f ${firstlaunch} ]; then\n\
+   cp -r /default-config/config/* /thingsboard_gateway/config/\n\
+   cp -r /default-config/connectors/dnp3/* /thingsboard_gateway/connectors/dnp3/ 2>/dev/null || echo "No DNP3 connectors to copy"\n\
+   cp -r /default-config/gateway/* /thingsboard_gateway/gateway/ 2>/dev/null || echo "No gateway files to copy"\n\
+   cp -r /default-config/tb_utility/* /thingsboard_gateway/tb_utility/ 2>/dev/null || echo "No utility files to copy"\n\
+   touch ${firstlaunch}\n\
+   echo "#Remove this file only if you want to recreate default config files! This will overwrite existing files" > ${firstlaunch}\n\
 fi\n\
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf\n\
-python /thingsboard_gateway/tb_gateway.py' > /start-gateway.sh && chmod +x /start-gateway.sh && \
-    python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    python3 -m pip install --no-cache-dir cryptography && \
-    python3 -m pip install --no-cache-dir -r requirements.txt && \
-    apt-get remove --purge -y gcc python3-dev build-essential libssl-dev libffi-dev zlib1g-dev pkg-config && \
-    apt-get autoremove -y && \
-    rustup self uninstall -y
+\n\
+python ./thingsboard_gateway/tb_gateway.py\n\
+'\
+>> start-gateway.sh  && chmod  +x start-gateway.sh
+ 
+# Set environment variables
+ENV PATH="/root/.local/bin:$PATH"
+ENV PYTHONPATH=.
+ENV configs  /thingsboard_gateway/config
+ENV extensions  /thingsboard_gateway/extensions
+ENV logs  /thingsboard_gateway/logs
+ENV connectors  /thingsboard_gateway/connectors/dnp3
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST  1
+ENV utility /thingsboard_gateway/tb_utility
+ENV gateway /thingsboard_gateway/gateway
+ 
+# Create default-config backup directory and copy initial configs
+RUN mkdir -p /default-config/config /default-config/connectors/dnp3 /default-config/gateway /default-config/tb_utility && \
+   cp -r /thingsboard_gateway/config/* /default-config/config/ 2>/dev/null || echo "No config files" && \
+   cp -r /thingsboard_gateway/connectors/dnp3/* /default-config/connectors/dnp3/ 2>/dev/null || echo "No DNP3 connector files" && \
+   cp -r /thingsboard_gateway/gateway/* /default-config/gateway/ 2>/dev/null || echo "No gateway files" && \
+   cp -r /thingsboard_gateway/tb_utility/* /default-config/tb_utility/ 2>/dev/null || echo "No utility files"
+ 
+# Install Python packages from main requirements.txt
+COPY requirements.txt .
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+   python3 -m pip install --no-cache-dir --upgrade setuptools &&  \
+   python3 -m pip install --no-cache-dir importlib_metadata && \
+   python3 -m pip install --no-cache-dir -r requirements.txt
+ 
+# Install DNP3 connector specific dependencies
+RUN python3 -m pip install --no-cache-dir rich python-dotenv
 
-VOLUME ["${configs}", "${extensions}", "${logs}"]
-
-CMD [ "/bin/sh", "/start-gateway.sh" ]
+# CRITICAL FIX: Only mount config, logs, and data as volumes
+# Do NOT mount extensions - they should be built into the image!
+VOLUME ["${configs}", "${logs}"]
+ 
+# Verify DNP3 connector files are present in the image
+RUN echo "=== Verifying DNP3 Connector Files ===" && \
+    ls -la /thingsboard_gateway/extensions/ && \
+    ls -la /thingsboard_gateway/extensions/dnp3/ && \
+    echo "=== Extensions verified ==="
+ 
+# Set the container command
+CMD [ "/bin/sh",  "./start-gateway.sh" ]

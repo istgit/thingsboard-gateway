@@ -1,0 +1,60 @@
+2025-10-20 10:01:51,142 - DNP3Connector - INFO - Loaded 5 devices
+2025-10-20 10:01:51,144 - DNP3Connector - INFO - Scaling to 1 processes (1 per 20 devices)
+2025-10-20 10:01:51,154 - DNP3Connector - INFO - Worker 1: devices 1-5 (PID: 222788)
+2025-10-20 10:01:51,222 - DNP3Connector - INFO - Connected to ThingsBoard at 192.168.89.87:1883
+2025-10-20 10:01:51,224 - DNP3Connector - INFO - Starting DNP3 Connector with 5 devices
+2025-10-20 10:01:51,230 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 35 points
+2025-10-20 10:01:51,235 - DNP3Connector - INFO - Master created for Dummy10
+2025-10-20 10:01:51,236 - DNP3Connector - INFO - ✓ Dummy10
+2025-10-20 10:01:52,240 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 35 points
+2025-10-20 10:01:52,241 - DNP3Connector - INFO - Master created for Dummy11
+2025-10-20 10:01:52,241 - DNP3Connector - INFO - ✓ Dummy11
+2025-10-20 10:01:53,243 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 35 points
+2025-10-20 10:01:53,245 - DNP3Connector - INFO - Master created for Dummy12
+2025-10-20 10:01:53,245 - DNP3Connector - INFO - ✓ Dummy12
+2025-10-20 10:01:54,248 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 35 points
+2025-10-20 10:01:54,250 - DNP3Connector - INFO - Master created for Dummy13
+2025-10-20 10:01:54,251 - DNP3Connector - INFO - ✓ Dummy13
+2025-10-20 10:01:55,256 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 35 points
+2025-10-20 10:01:55,262 - DNP3Connector - INFO - Master created for Dummy14
+2025-10-20 10:01:55,262 - DNP3Connector - INFO - ✓ Dummy14
+2025-10-20 10:02:02,084 - DNP3Connector - INFO - Sent telemetry for Dummy10: 21 fields
+2025-10-20 10:02:03,892 - DNP3Connector - INFO - Sent telemetry for Dummy11: 29 fields
+2025-10-20 10:02:05,699 - DNP3Connector - INFO - Sent telemetry for Dummy12: 29 fields
+2025-10-20 10:02:07,512 - DNP3Connector - INFO - Sent telemetry for Dummy13: 29 fields
+2025-10-20 10:02:09,326 - DNP3Connector - INFO - Sent telemetry for Dummy14: 29 fields
+2025-10-20 10:03:02,241 - DNP3Connector - INFO - Sent telemetry for Dummy10: 21 fields
+2025-10-20 10:03:04,051 - DNP3Connector - INFO - Sent telemetry for Dummy11: 29 fields
+2025-10-20 10:03:05,858 - DNP3Connector - INFO - Sent telemetry for Dummy12: 29 fields
+2025-10-20 10:03:07,665 - DNP3Connector - INFO - Sent telemetry for Dummy13: 29 fields
+2025-10-20 10:03:09,471 - DNP3Connector - INFO - Sent telemetry for Dummy14: 29 fields
+2025-10-21 11:01:10,667 - DNP3Connector - INFO - Loaded 5 devices
+2025-10-21 11:01:10,668 - DNP3Connector - INFO - Scaling to 1 processes (1 per 20 devices)
+2025-10-21 11:01:10,677 - DNP3Connector - INFO - Worker 1: devices 1-5 (PID: 237315)
+2025-10-21 11:01:10,721 - DNP3Connector - INFO - Connected to ThingsBoard at 192.168.89.87:1883
+2025-10-21 11:01:10,725 - DNP3Connector - INFO - Starting DNP3 Connector with 5 devices
+2025-10-21 11:01:10,731 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 92 points
+2025-10-21 11:01:10,734 - DNP3Connector - INFO - Master created for Dummy10
+2025-10-21 11:01:10,735 - DNP3Connector - INFO - ✓ Dummy10
+2025-10-21 11:01:11,743 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 92 points
+2025-10-21 11:01:11,746 - DNP3Connector - INFO - Master created for Dummy11
+2025-10-21 11:01:11,747 - DNP3Connector - INFO - ✓ Dummy11
+2025-10-21 11:01:12,754 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 92 points
+2025-10-21 11:01:12,759 - DNP3Connector - INFO - Master created for Dummy12
+2025-10-21 11:01:12,760 - DNP3Connector - INFO - ✓ Dummy12
+2025-10-21 11:01:13,765 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 92 points
+2025-10-21 11:01:13,767 - DNP3Connector - INFO - Master created for Dummy13
+2025-10-21 11:01:13,767 - DNP3Connector - INFO - ✓ Dummy13
+2025-10-21 11:01:14,773 - DNP3Connector - INFO - Loaded profile DNP3Profile2.csv: 92 points
+2025-10-21 11:01:14,775 - DNP3Connector - INFO - Master created for Dummy14
+2025-10-21 11:01:14,775 - DNP3Connector - INFO - ✓ Dummy14
+2025-10-21 11:01:21,590 - DNP3Connector - INFO - Sent telemetry for Dummy10: 29 fields
+2025-10-21 11:01:23,396 - DNP3Connector - INFO - Sent telemetry for Dummy11: 29 fields
+2025-10-21 11:01:25,202 - DNP3Connector - INFO - Sent telemetry for Dummy12: 29 fields
+2025-10-21 11:01:27,010 - DNP3Connector - INFO - Sent telemetry for Dummy13: 29 fields
+2025-10-21 11:01:28,817 - DNP3Connector - INFO - Sent telemetry for Dummy14: 29 fields
+2025-10-21 11:02:21,722 - DNP3Connector - INFO - Sent telemetry for Dummy10: 10 fields
+2025-10-21 11:02:23,528 - DNP3Connector - INFO - Sent telemetry for Dummy11: 2 fields
+2025-10-21 11:02:25,334 - DNP3Connector - INFO - Sent telemetry for Dummy12: 2 fields
+2025-10-21 11:02:27,140 - DNP3Connector - INFO - Sent telemetry for Dummy13: 2 fields
+2025-10-21 11:02:28,947 - DNP3Connector - INFO - Sent telemetry for Dummy14: 2 fields

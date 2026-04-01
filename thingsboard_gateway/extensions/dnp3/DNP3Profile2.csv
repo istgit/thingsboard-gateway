@@ -1,0 +1,127 @@
+GroupVariation,Index,Description,Field
+Group1Var2,0,Binary Input - With status,Lid Tamper Switch
+Group1Var2,1,Binary Input - With status,Vibration Sensor
+Group1Var2,2,Binary Input - With status,Supply Present
+Group1Var2,3,Binary Input - With status,External Digital Input 1
+Group1Var2,4,Binary Input - With status,External Digital Input 2
+Group1Var2,5,Binary Input - With status,External Digital Input 3
+Group1Var2,6,Binary Input - With status,GPS Position Valid
+Group1Var2,7,Binary Input - With status,Phase Angle Error Flag
+Group2Var2,0,Binary Input Event - With time,Lid Tamper Switch
+Group2Var2,1,Binary Input Event - With time,Vibration Sensor
+Group2Var2,2,Binary Input Event - With time,Supply Present
+Group2Var2,3,Binary Input Event - With time,External Digital Input 1
+Group2Var2,4,Binary Input Event - With time,External Digital Input 2
+Group2Var2,5,Binary Input Event - With time,External Digital Input 3
+Group2Var2,6,Binary Input Event - With time,GPS Position Valid
+Group2Var2,7,Binary Input Event - With time,Phase Angle Error Flag
+Group2Var1,0,Binary Input Event,Lid Tamper Switch
+Group2Var1,1,Binary Input Event,Vibration Sensor
+Group2Var1,2,Binary Input Event,Supply Present
+Group2Var1,3,Binary Input Event,External Digital Input 1
+Group2Var1,4,Binary Input Event,External Digital Input 2
+Group2Var1,5,Binary Input Event,External Digital Input 3
+Group2Var1,6,Binary Input Event,GPS Position Valid
+Group2Var1,7,Binary Input Event,Phase Angle Error Flag
+Group10Var2,0,Binary Output Status,General Purpose Open Collector Output 1
+Group10Var2,1,Binary Output Status,General Purpose Open Collector Output 2
+Group10Var2,2,Binary Output Status,General Purpose Open Collector Output 3
+Group10Var2,3,Binary Output Status,General Purpose Open Collector Output 4
+Group10Var2,4,Binary Output Status,General Purpose Open Collector Output 5
+Group20Var5,0,Counter - 32-bit,Accumulative kWh Energy Counter
+Group20Var5,1,Counter - 32-bit,Pulse Counter1
+Group20Var5,2,Counter - 32-bit,Pulse Counter2
+Group30Var1,0,Analog Input - 32-bit,Voltage Imbalance
+Group30Var1,1,Analog Input - 32-bit,Red Phase Voltage
+Group30Var1,2,Analog Input - 32-bit,White Phase Voltage
+Group30Var1,3,Analog Input - 32-bit,Blue Phase Voltage
+Group30Var1,4,Analog Input - 32-bit,Red Phase Current
+Group30Var1,5,Analog Input - 32-bit,White Phase Current
+Group30Var1,6,Analog Input - 32-bit,Blue Phase Current
+Group30Var1,7,Analog Input - 32-bit,Earth/Neutral Current
+Group30Var1,8,Analog Input - 32-bit,Phase Angle (Red Current and Voltage)
+Group30Var1,9,Analog Input - 32-bit,Phase Angle (White Current and Voltage)
+Group30Var1,10,Analog Input - 32-bit,Phase Angle (Blue Current and Voltage)
+Group30Var1,11,Analog Input - 32-bit,Line Frequency
+Group30Var1,12,Analog Input - 32-bit,Total Harmonic Distortion (THD)
+Group30Var1,13,Analog Input - 32-bit,Ambient Temperature
+Group30Var1,14,Analog Input - 32-bit,Transformer Temperature
+Group30Var1,15,Analog Input - 32-bit,Internal Battery Voltage
+Group30Var1,16,Analog Input - 32-bit,PSU Output Voltage
+Group30Var1,17,Analog Input - 32-bit,GSM Received Signal Strength
+Group30Var1,18,Analog Input - 32-bit,Number of Satellites
+Group30Var5,0,Analog Input - 32-bit with time,Voltage Imbalance
+Group30Var5,1,Analog Input - 32-bit with time,Red Phase Voltage
+Group30Var5,2,Analog Input - 32-bit with time,White Phase Voltage
+Group30Var5,3,Analog Input - 32-bit with time,Blue Phase Voltage
+Group30Var5,4,Analog Input - 32-bit with time,Red Phase Current
+Group30Var5,5,Analog Input - 32-bit with time,White Phase Current
+Group30Var5,6,Analog Input - 32-bit with time,Blue Phase Current
+Group30Var5,7,Analog Input - 32-bit with time,Earth/Neutral Current
+Group30Var5,8,Analog Input - 32-bit with time,Phase Angle (Red Current and Voltage)
+Group30Var5,9,Analog Input - 32-bit with time,Phase Angle (White Current and Voltage)
+Group30Var5,10,Analog Input - 32-bit with time,Phase Angle (Blue Current and Voltage)
+Group30Var5,11,Analog Input - 32-bit with time,Line Frequency
+Group30Var5,12,Analog Input - 32-bit with time,Total Harmonic Distortion (THD)
+Group30Var5,13,Analog Input - 32-bit with time,Ambient Temperature
+Group30Var5,14,Analog Input - 32-bit with time,Transformer Temperature
+Group30Var5,15,Analog Input - 32-bit with time,Internal Battery Voltage
+Group30Var5,16,Analog Input - 32-bit with time,PSU Output Voltage
+Group30Var5,17,Analog Input - 32-bit with time,GSM Received Signal Strength
+Group30Var5,18,Analog Input - 32-bit with time,Number of Satellites
+Group32Var1,0,Analog Input Event - 32-bit,Voltage Imbalance
+Group32Var1,1,Analog Input Event - 32-bit,Red Phase Voltage
+Group32Var1,2,Analog Input Event - 32-bit,White Phase Voltage
+Group32Var1,3,Analog Input Event - 32-bit,Blue Phase Voltage
+Group32Var1,4,Analog Input Event - 32-bit,Red Phase Current
+Group32Var1,5,Analog Input Event - 32-bit,White Phase Current
+Group32Var1,6,Analog Input Event - 32-bit,Blue Phase Current
+Group32Var1,7,Analog Input Event - 32-bit,Earth/Neutral Current
+Group32Var1,8,Analog Input Event - 32-bit,Phase Angle (Red Current and Voltage)
+Group32Var1,9,Analog Input Event - 32-bit,Phase Angle (White Current and Voltage)
+Group32Var1,10,Analog Input Event - 32-bit,Phase Angle (Blue Current and Voltage)
+Group32Var1,11,Analog Input Event - 32-bit,Line Frequency
+Group32Var1,12,Analog Input Event - 32-bit,Total Harmonic Distortion (THD)
+Group32Var1,13,Analog Input Event - 32-bit,Ambient Temperature
+Group32Var1,14,Analog Input Event - 32-bit,Transformer Temperature
+Group32Var1,15,Analog Input Event - 32-bit,Internal Battery Voltage
+Group32Var1,16,Analog Input Event - 32-bit,PSU Output Voltage
+Group32Var1,17,Analog Input Event - 32-bit,GSM Received Signal Strength
+Group32Var1,18,Analog Input Event - 32-bit,Number of Satellites
+Group32Var5,0,Analog Input Event - 32-bit with time,Voltage Imbalance
+Group32Var5,1,Analog Input Event - 32-bit with time,Red Phase Voltage
+Group32Var5,2,Analog Input Event - 32-bit with time,White Phase Voltage
+Group32Var5,3,Analog Input Event - 32-bit with time,Blue Phase Voltage
+Group32Var5,4,Analog Input Event - 32-bit with time,Red Phase Current
+Group32Var5,5,Analog Input Event - 32-bit with time,White Phase Current
+Group32Var5,6,Analog Input Event - 32-bit with time,Blue Phase Current
+Group32Var5,7,Analog Input Event - 32-bit with time,Earth/Neutral Current
+Group32Var5,8,Analog Input Event - 32-bit with time,Phase Angle (Red Current and Voltage)
+Group32Var5,9,Analog Input Event - 32-bit with time,Phase Angle (White Current and Voltage)
+Group32Var5,10,Analog Input Event - 32-bit with time,Phase Angle (Blue Current and Voltage)
+Group32Var5,11,Analog Input Event - 32-bit with time,Line Frequency
+Group32Var5,12,Analog Input Event - 32-bit with time,Total Harmonic Distortion (THD)
+Group32Var5,13,Analog Input Event - 32-bit with time,Ambient Temperature
+Group32Var5,14,Analog Input Event - 32-bit with time,Transformer Temperature
+Group32Var5,15,Analog Input Event - 32-bit with time,Internal Battery Voltage
+Group32Var5,16,Analog Input Event - 32-bit with time,PSU Output Voltage
+Group32Var5,17,Analog Input Event - 32-bit with time,GSM Received Signal Strength
+Group32Var5,18,Analog Input Event - 32-bit with time,Number of Satellites
+Group40Var1,0,Analog Output Status - 32-bit,Analog Output 1
+Group40Var1,1,Analog Output Status - 32-bit,Analog Output 2
+Group40Var1,2,Analog Output Status - 32-bit,Analog Output 3
+Group40Var1,3,Analog Output Status - 32-bit,Analog Output 4
+Group40Var1,4,Analog Output Status - 32-bit,Analog Output 5
+Group0Var204,0,Device Attributes - Number of master-defined data set prototypes,devNumMasterDatasetPrototypes
+Group0Var205,0,Device Attributes - Number of outstation-defined data set prototypes,devNumOutstationDatasetPrototypes
+Group0Var242,0,Device Attributes - Number of outstation-defined data sets,devNumOutstationDatasets
+Group0Var243,0,Device Attributes - Max number of binary outputs per request,devMaxBinaryOutputsPerRequest
+Group0Var245,0,Device Attributes - Local timing accuracy (ms),devLocalTimingAccuracy
+Group0Var246,0,Device Attributes - Duration of time accuracy (sec),devTimingAccuracyDuration
+Group0Var247,0,Device Attributes - Supports analog output events,devSupportsAnalogOutputEvents
+Group0Var248,0,Device Attributes - Max analog output index,devMaxAnalogOutputIndex
+Group0Var249,0,Device Attributes - Number of analog outputs,devNumAnalogOutputs
+Group0Var250,0,Device Attributes - Supports binary output events,devSupportsBinaryOutputEvents
+Group0Var252,0,Device Attributes - Number of binary outputs,devNumBinaryOutputs
+Group0Var254,0,Device Attributes - Supports Frozen Counter events,devSupportsFrozenCounterEvents
+Group0Var255,0,Device Attributes - Supports Analog Input events,devSupportsAnalogInputEvents

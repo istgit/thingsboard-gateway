@@ -1,0 +1,6 @@
+pydnp3
+rich
+dnp3-python
+dnp3protocol
+requests
+python-dotenv

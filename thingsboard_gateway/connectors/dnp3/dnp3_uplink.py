@@ -41,5 +41,3 @@ class DNP3Uplink:
             logger.error(f"Error during communication: {e}")
 
 
-
-
