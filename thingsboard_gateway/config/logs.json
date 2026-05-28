@@ -15,15 +15,6 @@
       "level": 0,
       "stream": "ext://sys.stdout"
     },
-    "serviceHandler": {
-      "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
-      "formatter": "LogFormatter",
-      "filename": "./logs/service.log",
-      "backupCount": 7,
-      "interval": 3,
-      "when": "D",
-      "encoding": "utf-8"
-    },
     "connectorHandler": {
       "class": "thingsboard_gateway.tb_utility.tb_rotating_file_handler.TimedRotatingFileHandler",
       "formatter": "LogFormatter",
@@ -73,7 +64,6 @@
   "loggers": {
     "service": {
       "handlers": [
-        "serviceHandler",
         "consoleHandler"
       ],
       "level": "DEBUG",
@@ -126,5 +116,5 @@
       "consoleHandler"
     ]
   },
-  "ts": 1766499334173
+  "ts": 1779961764560
 }

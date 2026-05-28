@@ -39,6 +39,126 @@
       "timeout": 1,
       "community": "public",
       "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0005",
+      "deviceType": "snmp2",
+      "site": "Jeff Masemola",
+      "ip": "10.112.184.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0006",
+      "deviceType": "snmp2",
+      "site": "Oranje Convenience Centre",
+      "ip": "10.100.6.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0007",
+      "deviceType": "snmp2",
+      "site": "Meadow Ridge",
+      "ip": "10.100.40.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0008",
+      "deviceType": "snmp2",
+      "site": "Monte Vista Motors",
+      "ip": "10.100.41.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0009",
+      "deviceType": "snmp2",
+      "site": "Bloemfontein 1Stop South Petrol",
+      "ip": "10.106.9.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0010",
+      "deviceType": "snmp2",
+      "site": "Bloemfontein 1Stop North",
+      "ip": "10.106.8.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0011",
+      "deviceType": "snmp2",
+      "site": "Bloemfontein 1Stop North Petrol",
+      "ip": "10.106.7.180",
+      "port": 161,
+      "timeout": 10,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0012",
+      "deviceType": "snmp2",
+      "site": "Bloemfontein 1Stop South",
+      "ip": "10.106.1.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0013",
+      "deviceType": "snmp2",
+      "site": "Klawer 1Stop",
+      "ip": "10.100.31.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0014",
+      "deviceType": "snmp2",
+      "site": "New Germany 1Plus",
+      "ip": "10.110.115.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0015",
+      "deviceType": "snmp2",
+      "site": "Multi Motors",
+      "ip": "10.104.42.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
+    },
+    {
+      "deviceName": "ups0016",
+      "deviceType": "snmp2",
+      "site": "Higginson Convenience Centre",
+      "ip": "10.110.27.180",
+      "port": 161,
+      "timeout": 1,
+      "community": "public",
+      "profiles": ["slow_poll", "frequent_poll"]
     }
   ],
   "profiles": [
@@ -121,6 +241,11 @@
             "oid": "1.3.6.1.2.1.33.1.2.7.0"
           },
           {
+            "key": "upsBatteryCondition",
+            "method": "get",
+            "oid": "1.3.6.1.2.1.33.1.2.8.0"
+          },
+          {
             "key": "upsInputVoltage",
             "method": "get",
             "oid": "1.3.6.1.2.1.33.1.3.3.1.3.1"
@@ -129,6 +254,11 @@
             "key": "upsOutputVoltage",
             "method": "get",
             "oid": "1.3.6.1.2.1.33.1.4.4.1.2.1"
+          },
+          {
+            "key": "upsOutputPower",
+            "method": "get",
+            "oid": "1.3.6.1.2.1.33.1.4.4.1.4.1"
           },
           {
             "key": "upsOutputPercLoad",

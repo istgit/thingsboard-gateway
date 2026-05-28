@@ -3,7 +3,7 @@
     "host": "10.128.0.33",
     "port": 1883,
     "remoteShell": false,
-    "remoteConfiguration": false,
+    "remoteConfiguration": true,
     "latencyDebugMode": false,
     "statistics": {
       "enable": true,
@@ -41,20 +41,24 @@
     "deviceMessagesRateLimits": "DEFAULT_MESSAGES_RATE_LIMIT",
     "deviceRateLimits": "DEFAULT_TELEMETRY_RATE_LIMIT",
     "deviceDpRateLimits": "DEFAULT_TELEMETRY_DP_RATE_LIMIT",
-    "ts": 1766499334173
+    "ts": 1779961764560
   },
   "storage": {
     "type": "memory",
+    "data_file_path": "./data/",
+    "max_read_records_count": 10,
+    "size_limit": 1024,
+    "max_db_amount": 10,
+    "oversize_check_period": 1,
+    "writing_batch_size": 1000,
+    "messages_ttl_check_in_hours": 1,
+    "messages_ttl_in_days": 7,
     "read_records_count": 100,
     "max_records_count": 100000,
     "data_folder_path": "./data/",
     "max_file_count": 10,
-    "max_read_records_count": 10,
     "max_records_per_file": 10000,
-    "data_file_path": "./data/",
-    "messages_ttl_check_in_hours": 1,
-    "messages_ttl_in_days": 7,
-    "ts": 1766499334173
+    "ts": 1779961764560
   },
   "grpc": {
     "enabled": false,
@@ -68,6 +72,18 @@
   },
   "connectors": [
     {
+      "type": "custom",
+      "name": "snmp2",
+      "configuration": "snmp2.json",
+      "class": "SNMP2Connector"
+    },
+    {
+      "type": "custom",
+      "name": "snmp_listener",
+      "configuration": "snmpListener.json",
+      "class": "SNMPListener"
+    },
+    {
       "type": "snmp2",
       "name": "snmp2",
       "configuration": "snmp2.json",
@@ -76,7 +92,7 @@
     {
       "type": "snmp_listener",
       "name": "snmp_listener",
-      "configuration": "snmp_listener.json",
+      "configuration": "snmpListener.json",
       "class": "SNMPListener"
     }
   ]
