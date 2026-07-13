@@ -3,7 +3,7 @@
     "host": "10.128.0.33",
     "port": 1883,
     "remoteShell": false,
-    "remoteConfiguration": true,
+    "remoteConfiguration": false,
     "latencyDebugMode": false,
     "statistics": {
       "enable": true,
@@ -72,28 +72,14 @@
   },
   "connectors": [
     {
-      "type": "custom",
-      "name": "snmp2",
-      "configuration": "snmp2.json",
-      "class": "SNMP2Connector"
-    },
-    {
-      "type": "custom",
-      "name": "snmp_listener",
-      "configuration": "snmpListener.json",
-      "class": "SNMPListener"
-    },
-    {
       "type": "snmp2",
       "name": "snmp2",
-      "configuration": "snmp2.json",
-      "class": "SNMP2Connector"
+      "configuration": "snmp2.json"
     },
     {
       "type": "snmp_listener",
       "name": "snmp_listener",
-      "configuration": "snmpListener.json",
-      "class": "SNMPListener"
+      "configuration": "snmp_listener.json"
     }
   ]
 }
