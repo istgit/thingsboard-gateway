@@ -311,6 +311,409 @@
         "slow_poll",
         "frequent_poll"
       ]
+    },
+    {
+      "deviceName": "ups0025",
+      "deviceType": "snmp2",
+      "site": "Evander",
+      "ip": "10.112.30.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0026",
+      "deviceType": "snmp2",
+      "site": "Riverhorse Valley",
+      "ip": "10.110.113.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0027",
+      "deviceType": "snmp2",
+      "site": "Hippo Park",
+      "ip": "10.110.116.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0028",
+      "deviceType": "snmp2",
+      "site": "Polo Pony",
+      "ip": "10.110.92.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0029",
+      "deviceType": "snmp2",
+      "site": "Simon's Auto Centre",
+      "ip": "10.100.82.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0030",
+      "deviceType": "snmp2",
+      "site": "Wingfield Motors Goodwood",
+      "ip": "10.100.75.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0031",
+      "deviceType": "snmp2",
+      "site": "Northridge Convenience Centre",
+      "ip": "10.100.75.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0032",
+      "deviceType": "snmp2",
+      "site": "Glenugie",
+      "ip": "10.110.23.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0033",
+      "deviceType": "snmp2",
+      "site": "Mabulalambiza",
+      "ip": "10.112.187.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+   {
+      "deviceName": "ups0034",
+      "deviceType": "snmp2",
+      "site": "Cornubia (Island park)",
+      "ip": "10.110.31.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0035",
+      "deviceType": "snmp2",
+      "site": "Stapleton",
+      "ip": "10.110.31.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0036",
+      "deviceType": "snmp2",
+      "site": "14th Avenue",
+      "ip": "10.114.132.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0037",
+      "deviceType": "snmp2",
+      "site": "Edenburg",
+      "ip": "10.114.24.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0038",
+      "deviceType": "snmp2",
+      "site": "Mosselbay 1Stop",
+      "ip": "10.104.38.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0039",
+      "deviceType": "snmp2",
+      "site": "Winelands 1Stop North",
+      "ip": "10.100.73.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0040",
+      "deviceType": "snmp2",
+      "site": "Winelands 1Stop South",
+      "ip": "10.100.74.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0041",
+      "deviceType": "snmp2",
+      "site": "Mount Edgecombe Convenience Centre",
+      "ip": "10.110.81.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0042",
+      "deviceType": "snmp2",
+      "site": "Fountain Plaza",
+      "ip": "10.114.160.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0043",
+      "deviceType": "snmp2",
+      "site": "Doornkop Convenience Centre",
+      "ip": "10.112.185.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0044",
+      "deviceType": "snmp2",
+      "site": "Orlando Service Station",
+      "ip": "10.114.142.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0045",
+      "deviceType": "snmp2",
+      "site": "Protea Glen Convenience Centre",
+      "ip": "10.114.160.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0046",
+      "deviceType": "snmp2",
+      "site": "Jabavu Convenience Centre",
+      "ip": "10.114.47.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0047",
+      "deviceType": "snmp2",
+      "site": "Devland Convenience Centre",
+      "ip": "10.114.22.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0048",
+      "deviceType": "snmp2",
+      "site": "Grasmere 1Stop South",
+      "ip": "10.114.42.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0049",
+      "deviceType": "snmp2",
+      "site": "Ma-Africa Convenience Centre",
+      "ip": "10.114.119.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0050",
+      "deviceType": "snmp2",
+      "site": "United Motors",
+      "ip": "10.114.143.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0051",
+      "deviceType": "snmp2",
+      "site": "Radebe Motors",
+      "ip": "10.114.87.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0052",
+      "deviceType": "snmp2",
+      "site": "Grasmere 1Stop North",
+      "ip": "10.114.41.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0053",
+      "deviceType": "snmp2",
+      "site": "North Coast 1Stop North",
+      "ip": "10.110.97.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0054",
+      "deviceType": "snmp2",
+      "site": "Mitchell Park Convenience Centre",
+      "ip": "10.110.47.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0055",
+      "deviceType": "snmp2",
+      "site": "Tierberg Convenience Centre",
+      "ip": "10.100.77.180",
+      "port": 161,
+      "timeout": 2,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
     }
   ],
   "profiles": [
@@ -350,7 +753,7 @@
     },
     {
       "profile_name": "frequent_poll",
-      "pollPeriod": 60000,
+      "pollPeriod": 300000,
       "fast_polling_option": "true",
       "attributes": [
         {
@@ -447,6 +850,7 @@
     "1.3.6.1.2.1.33.1.6.3.22": "upsAlarmShutDownPending",
     "1.3.6.1.2.1.33.1.6.3.23": "upsAlarmShutdownImminent",
     "1.3.6.1.2.1.33.1.6.3.24": "upsAlarmTestInProgress",
+    "1.3.6.1.2.1.33.1.6.3.158": "alarmSensorComLost",
     "1.3.6.1.2.1.33.2.1": "upsTrapOnBattery",
     "1.3.6.1.2.1.33.2.2": "upsTrapTestCompleted",
     "1.3.6.1.2.1.33.2.3": "upsTrapAlarmEntryAdded",

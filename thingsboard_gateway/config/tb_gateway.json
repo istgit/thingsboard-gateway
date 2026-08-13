@@ -74,12 +74,15 @@
     {
       "type": "snmp2",
       "name": "snmp2",
-      "configuration": "snmp2.json"
+      "configuration": "snmp2.json",
+      "class": "SNMP2Connector"
     },
     {
       "type": "snmp_listener",
       "name": "snmp_listener",
-      "configuration": "snmp_listener.json"
+      "configuration": "snmp_listener.json",
+      "class": "SNMPListener"
     }
   ]
 }
+
