@@ -13,12 +13,13 @@
 #     limitations under the License.
 
 import asyncio
+import traceback
 from random import choice
 from re import search
-from socket import gethostbyname
+from socket import gethostbyname, gaierror
 from string import ascii_lowercase
 from threading import Thread
-from time import sleep, time
+from time import time
 
 from thingsboard_gateway.connectors.connector import Connector
 from thingsboard_gateway.gateway.entities.converted_data import ConvertedData
@@ -87,50 +88,149 @@ class SNMP2Connector(Connector, Thread):
         # <hb> added property for short interval monitoring
         self.__short_interval_mode = False
 
+        # scaling controls - bound how many polls are in flight at once so a
+        # 1000-device sweep doesn't fire 1000 simultaneous UDP requests
+        self.__max_concurrent_polls = self.__config.get("maxConcurrentPolls", 100)
+        self.__semaphore = None  # created inside the running loop, in _run()
+
+        # backoff controls for devices that are down / unreachable
+        self.__max_backoff_ms = self.__config.get("maxBackoffMs", 300000)  # 5 min ceiling
+        self.__failure_threshold = self.__config.get("failureThresholdForBackoff", 3)
+
         self.__loop = asyncio.new_event_loop()
-
-
 
     def open(self):
         self.__stopped = False
         self.__fill_converters()
+        self.__resolve_devices()
         self.start()
 
     def run(self):
         self._connected = True
+        self.__loop.set_exception_handler(self.__handle_loop_exception)
         try:
             self.__loop.run_until_complete(self._run())
         except Exception as e:
             self._log.exception(e)
 
+    def __handle_loop_exception(self, loop, context):
+        """puresnmp's asyncio UDP transport can raise InvalidStateError when
+        a response arrives after its request has already timed out and the
+        associated future was already resolved - see
+        https://github.com/exhuma/puresnmp/issues/125 for the related
+        per-request-socket behavior that makes this race more likely under
+        concurrent load. It's harmless (the stale response is simply
+        discarded) but left unhandled it dumps a full ERROR traceback for
+        every occurrence, which gets noisy fast at device counts this high
+        and, with enableRemoteLogging on, ships straight to the platform.
+        Everything else still goes through the default handler untouched."""
+        exception = context.get('exception')
+        if isinstance(exception, asyncio.InvalidStateError):
+            tb = traceback.extract_tb(exception.__traceback__)
+            if any('puresnmp' in frame.filename for frame in tb):
+                self._log.debug("Discarded a late SNMP response that arrived after "
+                                "its request had already timed out: %s", context.get('message'))
+                return
+        loop.default_exception_handler(context)
+
+    def __resolve_devices(self):
+        """Resolve hostnames once at startup instead of on every poll cycle.
+
+        gethostbyname() is a blocking call - doing it inside the async poll
+        loop stalls the whole event loop on every single device, every
+        cycle. Resolve once here and cache the result on the device dict.
+        """
+        for device in self.__devices:
+            try:
+                device["_resolved_ip"] = gethostbyname(device["ip"])
+            except (gaierror, OSError) as e:
+                self._log.error("Could not resolve host \"%s\" for device \"%s\": %s - "
+                                "will retry on next connector restart",
+                                device.get("ip"), device.get("deviceName"), e)
+                # fall back to whatever was configured; if it's already an
+                # IP literal this still works fine
+                device["_resolved_ip"] = device["ip"]
+
     async def _run(self):
+        self.__semaphore = asyncio.Semaphore(self.__max_concurrent_polls)
         while not self.__stopped:
             current_time = time() * 1000
+            tasks = []
             for device in self.__devices:
-                # hb - get the profiles for the device.
                 device_profiles_list = device.get("profiles")
                 for index, profile in enumerate(self.__profiles):
                     # hb - check to see if this profile is applicable
                     if profile.get("profile_name") in device_profiles_list:
-                        last_poll_times = device.get("last_poll_times",[0,0,0])
+                        last_poll_times = device.get("last_poll_times", [0] * len(self.__profiles))
                         last_poll = last_poll_times[index]
 
-                        try:
-                            # <hb> added checking for short poll interval
-                            if self.__short_interval_mode is True and profile.get("fast_polling_option", "false") == "true":
-                                poll_interval = 10000
-                            else:
-                                poll_interval = profile.get("pollPeriod", 10000)
-                            if last_poll + poll_interval < current_time:
-                                await self.__process_data(device, profile)
-                                last_poll_times[index] = current_time
-                                device["last_poll_times"] = last_poll_times
-                        except Exception as e:
-                            self._log.exception(e)
+                        # <hb> added checking for short poll interval
+                        if self.__short_interval_mode is True and profile.get("fast_polling_option", "false") == "true":
+                            poll_interval = 10000
+                        else:
+                            poll_interval = profile.get("pollPeriod", 10000)
+
+                        if last_poll + poll_interval < current_time:
+                            # skip devices in failure backoff so a bank of
+                            # offline units doesn't keep consuming poll
+                            # slots every single cycle
+                            if self.__in_backoff(device, current_time):
+                                continue
+
+                            # mark as polled now, before awaiting, so a slow
+                            # in-flight poll can't get scheduled again next
+                            # tick while it's still running
+                            last_poll_times[index] = current_time
+                            device["last_poll_times"] = last_poll_times
+
+                            tasks.append(self.__poll_device_guarded(device, profile))
+
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+
             if self.__stopped:
                 break
             else:
-                sleep(.1)
+                await asyncio.sleep(.1)
+
+    def __in_backoff(self, device, current_time):
+        backoff_until = device.get("_backoff_until", 0)
+        return current_time < backoff_until
+
+    def __register_poll_success(self, device):
+        device["_consecutive_failures"] = 0
+        device["_backoff_until"] = 0
+
+    def __register_poll_failure(self, device, current_time):
+        failures = device.get("_consecutive_failures", 0) + 1
+        device["_consecutive_failures"] = failures
+        if failures >= self.__failure_threshold:
+            backoff_ms = min(self.__max_backoff_ms, 1000 * (2 ** (failures - self.__failure_threshold)))
+            device["_backoff_until"] = current_time + backoff_ms
+            self._log.warning("Device \"%s\" (%s) has failed %d consecutive polls - "
+                              "backing off for %.0f seconds",
+                              device.get("deviceName"), device.get("ip"), failures, backoff_ms / 1000)
+
+    async def __poll_device_guarded(self, device, profile):
+        """Wraps a single device poll with concurrency limiting and a hard
+        timeout ceiling, so one slow/offline device can never stall the
+        others, regardless of what puresnmp does internally."""
+        async with self.__semaphore:
+            device_timeout = device.get("timeout", 6)
+            # generous outer ceiling: the per-request client timeout is the
+            # primary control, this is a safety net against anything that
+            # hangs without raising SNMPTimeoutException
+            outer_timeout = device_timeout * 3 + 2
+            try:
+                await asyncio.wait_for(self.__process_data(device, profile), timeout=outer_timeout)
+                self.__register_poll_success(device)
+            except (asyncio.TimeoutError, SNMPTimeoutException):
+                self.__register_poll_failure(device, time() * 1000)
+                self._log.warning("Timeout polling device \"%s\" (%s)",
+                                  device.get("deviceName"), device.get("ip"))
+            except Exception as e:
+                self.__register_poll_failure(device, time() * 1000)
+                self._log.exception(e)
 
     def close(self):
         self.__stopped = True
@@ -161,21 +261,41 @@ class SNMP2Connector(Connector, Thread):
 
     async def __process_data(self, device, profile):
         common_parameters = self.__get_common_parameters(device)
-        # <hb> added initiation of converted data
-        # converted_data = {}
-        # converted_data = {
-        #     "deviceName": device["deviceName"],
-        #     "deviceType": device["deviceType"],
-        #     "attributes": [],
-        #     "telemetry": []
-        #     }
-        # </hb>
         device_responses = {}
         for datatype in self.__datatypes:
-            # changed to get datatypes from profile object
-            # for datatype_config in device[datatype]:
-            for datatype_config in profile[datatype]:
-                try:
+            datatype_configs = profile[datatype]
+
+            # Collapse plain "get" entries into a single multiget request -
+            # this is the single biggest lever for round-trip count: a
+            # profile with 10 individual "get" telemetry entries used to
+            # mean 10 separate SNMP requests per device per cycle, each
+            # paying its own round-trip latency. One multiget PDU carries
+            # all of them and comes back as one ordered list of values.
+            # Anything using another method (walk/bulkwalk/table/etc.)
+            # still goes out as its own request, since those already
+            # return multi-value payloads in one round trip.
+            batchable_configs = [c for c in datatype_configs
+                                 if c.get("method", "").lower() == "get" and c.get("oid")]
+            batchable_ids = set(id(c) for c in batchable_configs)
+            other_configs = [c for c in datatype_configs if id(c) not in batchable_ids]
+
+            try:
+                if batchable_configs:
+                    oids = [c["oid"] for c in batchable_configs]
+                    response_list = await self.__process_methods(
+                        "multiget", common_parameters, {"oid": oids})
+
+                    # multiget preserves request order per SNMP GetRequest
+                    # semantics, so this zip lines each value back up with
+                    # the key it came from
+                    for cfg, value in zip(batchable_configs, response_list):
+                        device_responses[cfg['key']] = value
+
+                    StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
+                    StatisticsService.count_connector_bytes(self.name, len(response_list),
+                                                            stat_parameter_name='connectorBytesReceived')
+
+                for datatype_config in other_configs:
                     method = datatype_config.get("method")
                     if method is None:
                         self._log.error("Method not found in configuration: %r", datatype_config)
@@ -184,30 +304,27 @@ class SNMP2Connector(Connector, Thread):
                         method = method.lower()
                     if method not in self.__methods:
                         self._log.error("Unknown method: %s, configuration is: %r", method, datatype_config)
+
                     response = await self.__process_methods(method, common_parameters, datatype_config)
                     device_responses[datatype_config['key']] = response
-
-                    # print("converted data before: ", converted_data)
-                    # print("device data type", datatype)
-                    # converted_data.update(**device["uplink_converter"].convert((datatype, datatype_config), response))
-
-                    # <hb> check if there are alarms active requiring short interval polling
-                    if (datatype_config["key"] == "upsAlarmsPresent") and response > 0:
-                        self.__short_interval_mode = True
-                        print("==== SHORT INTERVAL POLLING ========")
-                    if (datatype_config["key"] == "upsAlarmsPresent") and response == 0:
-                        self.__short_interval_mode = False
 
                     StatisticsService.count_connector_message(self.name, stat_parameter_name='connectorMsgsReceived')
                     StatisticsService.count_connector_bytes(self.name, response,
                                                             stat_parameter_name='connectorBytesReceived')
-                except SNMPTimeoutException:
-                    self._log.error("Timeout exception on connection to device \"%s\" with ip: \"%s\"",
-                                    device["deviceName"],
-                                    device["ip"])
-                    return
-                except Exception as e:
-                    self._log.exception(e)
+            except SNMPTimeoutException:
+                self._log.error("Timeout exception on connection to device \"%s\" with ip: \"%s\"",
+                                device["deviceName"],
+                                device["ip"])
+                raise
+            except Exception as e:
+                self._log.exception(e)
+
+        # <hb> check if there are alarms active requiring short interval polling
+        # (moved outside the per-config loop now that "upsAlarmsPresent" may
+        # arrive via either the batched multiget path or an individual request)
+        alarms_present = device_responses.get("upsAlarmsPresent")
+        if alarms_present is not None:
+            self.__short_interval_mode = alarms_present > 0
 
         if device_responses:  # hb - also pass the profile and oids to the uplink converter
             converted_data: ConvertedData = device["uplink_converter"].convert(device, profile, self.__oids, device_responses)
@@ -218,17 +335,12 @@ class SNMP2Connector(Connector, Thread):
                 self.collect_statistic_and_send(self.get_name(), self.get_id(), converted_data)
 
     async def __process_methods(self, method, common_parameters, datatype_config):
-        # <hb> changes for snmp version 2
-        #client = Client(ip=common_parameters['ip'],
-        #                port=common_parameters['port'],
-        #                credentials=credentials.V1(common_parameters['community']))
         client = Client(ip=common_parameters['ip'],
                         port=common_parameters['port'],
                         credentials=V2C(common_parameters['community']))
 
         client.configure(timeout=common_parameters['timeout'])
         client = PyWrapper(client)
-        print('>>', method)
         response = None
 
         if method == "get":
@@ -304,7 +416,10 @@ class SNMP2Connector(Connector, Thread):
 
     @staticmethod
     def __get_common_parameters(device):
-        return {"ip": gethostbyname(device["ip"]),
+        # ip is resolved once in __resolve_devices() at startup, not on
+        # every poll - gethostbyname() is a blocking call that would
+        # otherwise stall the whole event loop each time it's invoked
+        return {"ip": device.get("_resolved_ip", device["ip"]),
                 "port": device.get("port", 161),
                 "timeout": device.get("timeout", 6),
                 "community": device["community"]
@@ -321,8 +436,15 @@ class SNMP2Connector(Connector, Thread):
                 for attribute, value in content["data"]:
                     if search(attribute, attribute_request_config["attributeFilter"]):
                         common_parameters = self.__get_common_parameters(device)
-                        result = self.__process_methods(attribute_request_config["method"], common_parameters,
-                                                        {**attribute_request_config, "value": value})
+                        # NOTE: this must be scheduled on the connector's own
+                        # event loop and awaited via the threadsafe bridge -
+                        # calling the coroutine directly here without
+                        # awaiting it silently does nothing.
+                        result = asyncio.run_coroutine_threadsafe(
+                            self.__process_methods(attribute_request_config["method"], common_parameters,
+                                                   {**attribute_request_config, "value": value}),
+                            loop=self.__loop
+                        ).result(timeout=int(attribute_request_config.get("timeout", 5)))
                         self._log.debug(
                             "Received attribute update request for device \"%s\" "
                             "with attribute \"%s\" and value \"%s\"",

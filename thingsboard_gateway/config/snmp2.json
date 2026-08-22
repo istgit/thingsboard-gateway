@@ -1,4 +1,8 @@
 {
+  "maxConcurrentPolls": 100,
+  "maxBackoffMs": 300000,
+  "failureThresholdForBackoff": 3,
+  "logLevel": "INFO",
   "devices": [
     {
       "deviceName": "ups0001",
@@ -6,7 +10,7 @@
       "site": "De Werf",
       "ip": "10.100.115.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -19,7 +23,7 @@
       "site": "IST Mews",
       "ip": "192.168.88.27",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -32,7 +36,7 @@
       "site": "Swartland",
       "ip": "10.100.62.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -45,7 +49,7 @@
       "site": "Osizweni",
       "ip": "10.112.182.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -58,7 +62,7 @@
       "site": "Jeff Masemola",
       "ip": "10.112.184.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -71,7 +75,7 @@
       "site": "Oranje Convenience Centre",
       "ip": "10.100.6.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -84,7 +88,7 @@
       "site": "Meadow Ridge",
       "ip": "10.100.40.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -97,7 +101,7 @@
       "site": "Monte Vista Motors",
       "ip": "10.100.41.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -110,7 +114,7 @@
       "site": "Bloemfontein 1Stop South Petrol",
       "ip": "10.106.9.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -123,7 +127,7 @@
       "site": "Bloemfontein 1Stop North",
       "ip": "10.106.8.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -136,7 +140,7 @@
       "site": "Bloemfontein 1Stop North Petrol",
       "ip": "10.106.7.180",
       "port": 161,
-      "timeout": 10,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -149,7 +153,7 @@
       "site": "Bloemfontein 1Stop South",
       "ip": "10.106.1.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -162,7 +166,7 @@
       "site": "Klawer 1Stop",
       "ip": "10.100.31.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -175,7 +179,7 @@
       "site": "New Germany 1Plus",
       "ip": "10.110.115.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -188,7 +192,7 @@
       "site": "Multi Motors",
       "ip": "10.104.42.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -201,7 +205,7 @@
       "site": "Higginson Convenience Centre",
       "ip": "10.110.27.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -214,7 +218,7 @@
       "site": "Welgemoed Convenience Centre",
       "ip": "10.100.69.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -227,7 +231,7 @@
       "site": "Siyabuswa",
       "ip": "10.108.84.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -240,7 +244,7 @@
       "site": "Refiloe Motors",
       "ip": "10.108.25.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -253,7 +257,7 @@
       "site": "Engen Plaza Rusteburg",
       "ip": "10.112.183.180",
       "port": 161,
-      "timeout": 1,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -266,7 +270,7 @@
       "site": "Phola Park",
       "ip": "10.116.19.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -279,7 +283,7 @@
       "site": "Kroonvaal 1Stop North - Food",
       "ip": "10.106.61.181",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -292,7 +296,7 @@
       "site": "Kroonvaal 1Stop North - Petrol",
       "ip": "10.106.61.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -305,7 +309,7 @@
       "site": "Fourways Gardens",
       "ip": "10.112.186.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -318,7 +322,7 @@
       "site": "Evander",
       "ip": "10.112.30.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -331,7 +335,7 @@
       "site": "Riverhorse Valley",
       "ip": "10.110.113.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -344,7 +348,7 @@
       "site": "Hippo Park",
       "ip": "10.110.116.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -357,7 +361,7 @@
       "site": "Polo Pony",
       "ip": "10.110.92.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -370,7 +374,7 @@
       "site": "Simon's Auto Centre",
       "ip": "10.100.82.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -383,7 +387,7 @@
       "site": "Wingfield Motors Goodwood",
       "ip": "10.100.75.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -396,7 +400,7 @@
       "site": "Northridge Convenience Centre",
       "ip": "10.100.75.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -409,7 +413,7 @@
       "site": "Glenugie",
       "ip": "10.110.23.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -422,7 +426,7 @@
       "site": "Mabulalambiza",
       "ip": "10.112.187.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -435,7 +439,7 @@
       "site": "Cornubia (Island park)",
       "ip": "10.110.31.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -448,7 +452,7 @@
       "site": "Stapleton",
       "ip": "10.110.31.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -461,7 +465,7 @@
       "site": "14th Avenue",
       "ip": "10.114.132.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -474,7 +478,7 @@
       "site": "Edenburg",
       "ip": "10.114.24.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -487,7 +491,7 @@
       "site": "Mosselbay 1Stop",
       "ip": "10.104.38.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -500,7 +504,7 @@
       "site": "Winelands 1Stop North",
       "ip": "10.100.73.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -513,7 +517,7 @@
       "site": "Winelands 1Stop South",
       "ip": "10.100.74.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -526,7 +530,7 @@
       "site": "Mount Edgecombe Convenience Centre",
       "ip": "10.110.81.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -539,7 +543,7 @@
       "site": "Fountain Plaza",
       "ip": "10.114.160.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -552,7 +556,7 @@
       "site": "Doornkop Convenience Centre",
       "ip": "10.112.185.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -565,7 +569,7 @@
       "site": "Orlando Service Station",
       "ip": "10.114.142.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -578,7 +582,7 @@
       "site": "Protea Glen Convenience Centre",
       "ip": "10.114.160.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -591,7 +595,7 @@
       "site": "Jabavu Convenience Centre",
       "ip": "10.114.47.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -604,7 +608,7 @@
       "site": "Devland Convenience Centre",
       "ip": "10.114.22.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -617,7 +621,7 @@
       "site": "Grasmere 1Stop South",
       "ip": "10.114.42.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -630,7 +634,7 @@
       "site": "Ma-Africa Convenience Centre",
       "ip": "10.114.119.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -643,7 +647,7 @@
       "site": "United Motors",
       "ip": "10.114.143.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -656,7 +660,7 @@
       "site": "Radebe Motors",
       "ip": "10.114.87.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -669,7 +673,7 @@
       "site": "Grasmere 1Stop North",
       "ip": "10.114.41.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -682,7 +686,7 @@
       "site": "North Coast 1Stop North",
       "ip": "10.110.97.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -695,7 +699,7 @@
       "site": "Mitchell Park Convenience Centre",
       "ip": "10.110.47.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",
@@ -708,7 +712,20 @@
       "site": "Tierberg Convenience Centre",
       "ip": "10.100.77.180",
       "port": 161,
-      "timeout": 2,
+      "timeout": 3,
+      "community": "public",
+      "profiles": [
+        "slow_poll",
+        "frequent_poll"
+      ]
+    },
+    {
+      "deviceName": "ups0056",
+      "deviceType": "snmp2",
+      "site": "Fairfield Motors",
+      "ip": "10.100.63.180",
+      "port": 161,
+      "timeout": 3,
       "community": "public",
       "profiles": [
         "slow_poll",

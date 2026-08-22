@@ -22,7 +22,7 @@
     "handleDeviceRenaming": true,
     "security": {
       "type": "accessToken",
-      "accessToken": "GATEWAY_TOKEN_1"
+      "accessToken": "GATEWAY_TOKEN_2"
     },
     "qos": 1,
     "reportStrategy": {
