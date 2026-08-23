@@ -13,6 +13,9 @@
 #     limitations under the License.
 
 import asyncio
+import gc
+import os
+import resource
 import traceback
 from random import choice
 from re import search
@@ -46,6 +49,44 @@ if installation_required:
 # <hb> added import for version of the snmp module
 from puresnmp import Client, credentials, PyWrapper, V2C
 from puresnmp.exc import Timeout as SNMPTimeoutException
+
+# --- Patch: puresnmp 2.0.1's SNMPClientProtocol.get_data() only aborts its
+# UDP transport when ITS OWN internal per-attempt timeout fires (the
+# `except (asyncio.TimeoutError, socket.timeout)` branch below, confirmed
+# from the installed package source). If the awaiting task is cancelled
+# from OUTSIDE instead - exactly what __poll_device_guarded's outer
+# asyncio.wait_for() safety-net timeout does whenever it actually fires -
+# a CancelledError is raised at the same await point, but that branch
+# doesn't catch it, so transport.abort() is never called and the UDP
+# socket is orphaned. This is the confirmed root cause of the file
+# descriptor leak found in soak testing (and, as a side effect, of the
+# InvalidStateError seen earlier - a late response landing on a future
+# our own cancellation had already invalidated). Patched here at import
+# time rather than editing the installed package, so the fix survives a
+# `pip install --upgrade puresnmp` and stays visible next to the code
+# that depends on it. Worth reporting upstream to exhuma/puresnmp too.
+import socket as _socket
+import puresnmp.transport as _puresnmp_transport
+
+
+async def _patched_get_data(self, timeout):
+    try:
+        return await asyncio.wait_for(self.future, timeout)
+    except (asyncio.TimeoutError, _socket.timeout) as exc:
+        if self.transport:
+            self.transport.abort()
+        raise SNMPTimeoutException(
+            f"{timeout} second timeout exceeded on UDP transport.") from exc
+    except asyncio.CancelledError:
+        # the actual fix: abort the transport here too, then re-raise -
+        # never swallow a CancelledError, that breaks asyncio's
+        # cancellation contract for whatever cancelled us in the first place
+        if self.transport:
+            self.transport.abort()
+        raise
+
+
+_puresnmp_transport.SNMPClientProtocol.get_data = _patched_get_data
 
 
 class SNMP2Connector(Connector, Thread):
@@ -96,6 +137,15 @@ class SNMP2Connector(Connector, Thread):
         # backoff controls for devices that are down / unreachable
         self.__max_backoff_ms = self.__config.get("maxBackoffMs", 300000)  # 5 min ceiling
         self.__failure_threshold = self.__config.get("failureThresholdForBackoff", 3)
+
+        # the fd usage check forces a full gc.collect() pass, which is not
+        # free (a generation-2 collection walks the whole heap) - the poll
+        # loop ticks roughly every 100ms when idle, so calling this
+        # unthrottled means ~10 full GC passes per second for no benefit.
+        # Throttle it to a much coarser interval; leak growth plays out
+        # over minutes/hours, so checking every 30s loses no useful signal.
+        self.__fd_check_interval_ms = self.__config.get("fdCheckIntervalMs", 30000)
+        self.__last_fd_check = 0
 
         self.__loop = asyncio.new_event_loop()
 
@@ -154,6 +204,7 @@ class SNMP2Connector(Connector, Thread):
     async def _run(self):
         self.__semaphore = asyncio.Semaphore(self.__max_concurrent_polls)
         while not self.__stopped:
+            self.__check_fd_usage()
             current_time = time() * 1000
             tasks = []
             for device in self.__devices:
@@ -192,6 +243,59 @@ class SNMP2Connector(Connector, Thread):
                 break
             else:
                 await asyncio.sleep(.1)
+
+    def __check_fd_usage(self):
+        """Circuit breaker for the socket leak in puresnmp's UDP transport
+        layer (every request opens a fresh datagram socket - see
+        https://github.com/exhuma/puresnmp/issues/125 - and some fraction
+        of those aren't being closed, causing fd count to climb steadily
+        over a run). Rather than guess at puresnmp's internals and risk a
+        silent no-op patch, this watches the process's actual fd usage and
+        forces a clean, fast restart before exhaustion takes down every
+        device at once. Safe because the systemd unit has Restart=always /
+        RestartSec=10 - a ~10s blip beats a multi-hour outage."""
+        now = time() * 1000
+        if now - self.__last_fd_check < self.__fd_check_interval_ms:
+            return
+        self.__last_fd_check = now
+
+        try:
+            soft_limit, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
+            open_fds_before = len(os.listdir(f'/proc/{os.getpid()}/fd'))
+
+            # asyncio UDP transports normally close themselves via a __del__
+            # safety net once nothing references them - but transport,
+            # protocol, and the future they were going to fulfill typically
+            # form a reference cycle, which plain refcounting can't reclaim
+            # and only a full GC pass can. This is a cheap, safe experiment:
+            # if it reclaims fds, the abandoned transports were reachable-
+            # but-unused and this is a real mitigation; if the count doesn't
+            # move, something is still holding a live reference and the
+            # leak needs a fix at the puresnmp source level instead.
+            collected = gc.collect()
+            open_fds = len(os.listdir(f'/proc/{os.getpid()}/fd'))
+            reclaimed = open_fds_before - open_fds
+            if reclaimed > 0:
+                self._log.info("Garbage collection reclaimed %d file descriptor(s) "
+                               "(%d objects collected) - likely orphaned SNMP transports "
+                               "from unanswered requests.", reclaimed, collected)
+
+            usage_ratio = open_fds / soft_limit
+            if usage_ratio >= 0.8:
+                self._log.critical(
+                    "Open file descriptors at %d/%d (%.0f%% of limit) - this looks like "
+                    "the known puresnmp socket leak approaching exhaustion. Restarting "
+                    "the process now rather than waiting for every device to start "
+                    "failing; systemd will bring the service back up in ~10s.",
+                    open_fds, soft_limit, usage_ratio * 100)
+                os._exit(1)
+            elif usage_ratio >= 0.5:
+                self._log.warning("Open file descriptors at %d/%d (%.0f%% of limit) - "
+                                  "climbing steadily suggests the puresnmp socket leak; "
+                                  "worth tracking whether this correlates with poll volume.",
+                                  open_fds, soft_limit, usage_ratio * 100)
+        except Exception as e:
+            self._log.debug("Could not check file descriptor usage: %s", e)
 
     def __in_backoff(self, device, current_time):
         backoff_until = device.get("_backoff_until", 0)
